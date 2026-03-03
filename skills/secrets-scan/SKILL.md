@@ -19,7 +19,7 @@ One of the following:
 
 ```bash
 # Scan current directory
-docker run --rm -v "$(pwd):/src" zricethezav/gitleaks:latest \
+docker run --rm -v "${PWD}:/src" zricethezav/gitleaks:latest \
   detect \
   --source=/src \
   --report-format=json \
@@ -27,7 +27,7 @@ docker run --rm -v "$(pwd):/src" zricethezav/gitleaks:latest \
   --no-git
 
 # Scan git history (deeper but slower)
-docker run --rm -v "$(pwd):/src" zricethezav/gitleaks:latest \
+docker run --rm -v "${PWD}:/src" zricethezav/gitleaks:latest \
   detect \
   --source=/src \
   --report-format=json \

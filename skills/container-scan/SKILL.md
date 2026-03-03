@@ -59,7 +59,7 @@ trivy image \
 ### Option 4: Scan Dockerfile for misconfigurations
 
 ```bash
-docker run --rm -v "$(pwd):/src" aquasec/trivy:latest \
+docker run --rm -v "${PWD}:/src" aquasec/trivy:latest \
   config \
   --format json \
   --output /src/dockerfile-report.json \

@@ -18,7 +18,7 @@ One of the following:
 ### Option 1: Docker (recommended)
 
 ```bash
-docker run --rm -v "$(pwd):/src" semgrep/semgrep:latest \
+docker run --rm -v "${PWD}:/src" semgrep/semgrep:latest \
   semgrep scan \
   --config=auto \
   --json \

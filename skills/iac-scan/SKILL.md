@@ -18,7 +18,7 @@ One of the following:
 ### Option 1: Docker (recommended)
 
 ```bash
-docker run --rm -v "$(pwd):/src" checkmarx/kics:latest \
+docker run --rm -v "${PWD}:/src" checkmarx/kics:latest \
   scan \
   --path /src \
   --output-path /src \
@@ -41,17 +41,17 @@ kics scan \
 
 ```bash
 # Terraform only
-docker run --rm -v "$(pwd):/src" checkmarx/kics:latest \
+docker run --rm -v "${PWD}:/src" checkmarx/kics:latest \
   scan --path /src --type Terraform \
   --output-path /src --output-name iac-report --report-formats json
 
 # Kubernetes manifests only
-docker run --rm -v "$(pwd):/src" checkmarx/kics:latest \
+docker run --rm -v "${PWD}:/src" checkmarx/kics:latest \
   scan --path /src --type Kubernetes \
   --output-path /src --output-name iac-report --report-formats json
 
 # Dockerfile only
-docker run --rm -v "$(pwd):/src" checkmarx/kics:latest \
+docker run --rm -v "${PWD}:/src" checkmarx/kics:latest \
   scan --path /src --type Dockerfile \
   --output-path /src --output-name iac-report --report-formats json
 ```

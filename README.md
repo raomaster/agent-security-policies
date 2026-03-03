@@ -1,7 +1,7 @@
 # agent-security-policies
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4-green.svg)](CHANGELOG.md)
 [![OWASP ASVS](https://img.shields.io/badge/OWASP_ASVS-5.0.0-orange.svg)](policies/owasp_asvs.yaml)
 [![CWE Top 25](https://img.shields.io/badge/CWE_Top_25-2025-red.svg)](policies/cwe_top25.yaml)
 
@@ -42,6 +42,22 @@
 ## Quick Install
 
 One command — zero dependencies. Copies `AGENT_RULES.md` + `policies/` + `skills/` and generates the config file your agent auto-detects.
+
+### npx (Cross-platform — recommended)
+
+```bash
+# All agents + security skills
+npx agent-security-policies --all
+
+# Specific agents only
+npx agent-security-policies --agent copilot,claude --skills
+
+# Interactive mode — guided setup
+npx agent-security-policies
+
+# List available agents, profiles, and skills
+npx agent-security-policies --list
+```
 
 ### Linux / macOS
 

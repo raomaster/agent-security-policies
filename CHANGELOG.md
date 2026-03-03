@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.0] — 2026-03-03
+
+### Added
+
+- `npx agent-security-policies` CLI tool — cross-platform TypeScript installer, zero runtime dependencies
+  - `--all` — install for all supported agents + security skills
+  - `--agent <list>` — comma-separated agent selection (copilot, codex, claude, antigravity)
+  - `--skills` — install security skills pack
+  - `--profile standard|lite` — select token-optimized rule profile
+  - `--target <dir>` — install to a specific project directory
+  - `--list` — show available agents, profiles, and skills
+  - Interactive mode when invoked with no flags
+- `package.json`, `tsconfig.json`, `src/` — TypeScript CLI source (Node.js 18+)
+
+### Changed
+
+- `README.md` — added `npx` as the recommended (cross-platform) install method in Quick Install
+
 ## [Unreleased]
 
 ### Added

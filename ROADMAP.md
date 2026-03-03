@@ -66,31 +66,25 @@ Agents auto-configured:
 | `claude` | Claude CLI (Anthropic) | `CLAUDE.md` |
 | `antigravity` | Antigravity (Google Gemini) | `.agent/rules/security.md` |
 
+### v1.4 — CLI Tool (npx) ✅
+
+| Deliverable | Status |
+|-------------|--------|
+| npm package `agent-security-policies` — TypeScript CLI wrapping install script logic | ✅ |
+| `--agent <name>` flag — target: copilot, codex, claude, antigravity | ✅ |
+| `--profile standard\|lite` — maps to config profiles | ✅ |
+| `--list` flag — show available agents, profiles, and skills | ✅ |
+| `--skills` flag — install security skills pack | ✅ |
+| Interactive mode — prompt-based selection if no flags | ✅ |
+| `--all` — install for all agents + skills | ✅ |
+| `--target <dir>` — install to custom project directory | ✅ |
+| `--version` / `--help` flags | ✅ |
+| Non-destructive: skips existing files | ✅ |
+| Zero runtime dependencies (Node.js built-ins only) | ✅ |
+
 ---
 
 ## Next Up
-
-### v1.4 — CLI Tool (npx)
-
-> **Goal:** `npx agent-security-policies` as an alternative delivery method. Wraps the same logic as install scripts.
-
-**Priority: 🟡 Medium** — Part of the delivery mechanism, critical for adoption in Node.js ecosystems.
-
-| Task | Notes |
-|------|-------|
-| npm package `agent-security-policies` | TypeScript CLI wrapping install script logic |
-| `--agent <name>` flag | Target: copilot, codex, claude, antigravity (+ more in v1.5) |
-| `--profile minimal\|standard\|strict` | Maps to config profiles from README |
-| `--list` flag | Show available agents and profiles |
-| Interactive mode | Prompt-based selection if no flags |
-| Publish to npm | `npx agent-security-policies` works out of the box |
-
-**Definition of Done:**
-- [ ] `npx agent-security-policies --agent copilot --profile strict` generates valid config
-- [ ] Published on npm
-- [ ] README documents all CLI flags
-
----
 
 ### v1.5 — GitHub Pages + Community
 

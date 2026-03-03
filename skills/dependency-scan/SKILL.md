@@ -18,7 +18,7 @@ One of the following:
 ### Option 1: Docker (recommended)
 
 ```bash
-docker run --rm -v "$(pwd):/src" aquasec/trivy:latest \
+docker run --rm -v "${PWD}:/src" aquasec/trivy:latest \
   fs \
   --scanners vuln \
   --format json \
@@ -40,7 +40,7 @@ trivy fs \
 
 ```bash
 # Only CRITICAL and HIGH
-docker run --rm -v "$(pwd):/src" aquasec/trivy:latest \
+docker run --rm -v "${PWD}:/src" aquasec/trivy:latest \
   fs \
   --scanners vuln \
   --severity CRITICAL,HIGH \

@@ -1,0 +1,53 @@
+{
+  "name": "agent-security-policies",
+  "version": "1.4.0",
+  "description": "Portable, standards-backed security policies for any AI coding agent. One command to install OWASP, CWE, NIST rules + security skills.",
+  "keywords": [
+    "security",
+    "ai-agent",
+    "copilot",
+    "codex",
+    "claude",
+    "antigravity",
+    "gemini",
+    "owasp",
+    "cwe",
+    "devsecops",
+    "sast",
+    "secure-coding"
+  ],
+  "author": "raomaster",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raomaster/agent-security-policies.git"
+  },
+  "homepage": "https://github.com/raomaster/agent-security-policies",
+  "bugs": {
+    "url": "https://github.com/raomaster/agent-security-policies/issues"
+  },
+  "bin": {
+    "agent-security-policies": "dist/cli.js"
+  },
+  "main": "dist/cli.js",
+  "type": "module",
+  "files": [
+    "dist/",
+    "policies/",
+    "skills/",
+    "AGENT_RULES.md",
+    "AGENT_RULES_LITE.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}
