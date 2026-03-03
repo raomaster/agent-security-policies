@@ -1,17 +1,52 @@
 # agent-security-policies
 
-> **Portable security configuration for any AI coding agent.**
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.3-green.svg)](CHANGELOG.md)
+[![OWASP ASVS](https://img.shields.io/badge/OWASP_ASVS-5.0.0-orange.svg)](policies/owasp_asvs.yaml)
+[![CWE Top 25](https://img.shields.io/badge/CWE_Top_25-2025-red.svg)](policies/cwe_top25.yaml)
 
-Use this repository as the canonical policy source in your project root.
+> **Portable, standards-backed security policies for any AI coding agent.**
+>
+> AI coding agents generate code fast — but without guardrails, they also generate vulnerabilities fast. This project provides a drop-in security policy layer that works with **10+ agents and IDEs**, backed by OWASP, NIST, CWE, and SLSA standards.
+>
+> One install command. Zero dependencies. Every agent speaks security.
+
+---
+
+## Table of Contents
+
+- [Quick Install](#quick-install)
+- [Contents](#contents)
+- [Agent Security Skills](#-agent-security-skills-new-in-v13)
+- [Delivery Options](#delivery-options)
+- [Configuration Profiles](#configuration-profiles)
+- [Agent Setup](#agent-setup)
+  - [GitHub Copilot](#github-copilot)
+  - [Cursor](#cursor)
+  - [Windsurf](#windsurf)
+  - [Claude (Anthropic)](#claude-anthropic)
+  - [ChatGPT / GPT API](#chatgpt--gpt-api)
+  - [Gemini / Antigravity](#gemini-code-assist--antigravity)
+  - [Cline / Roo Code](#cline--roo-code-vs-code)
+  - [Aider](#aider)
+  - [Continue.dev](#continuedev)
+  - [OpenCode / PEA Engine](#opencode--pea-engine)
+- [Monorepo Configuration](#monorepo-configuration)
+- [CI Enforcement](#ci-enforcement-recommended)
+- [Standards Covered](#standards-covered)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Quick Install
 
-One command — zero dependencies. Copies `AGENT_RULES.md` + `policies/` and generates the config file your agent auto-detects.
+One command — zero dependencies. Copies `AGENT_RULES.md` + `policies/` + `skills/` and generates the config file your agent auto-detects.
 
 ### Linux / macOS
 
 ```bash
-# All agents (Copilot, Codex CLI, Claude CLI, Antigravity)
+# All agents + security skills (Copilot, Codex CLI, Claude CLI, Antigravity)
 curl -sSL https://raw.githubusercontent.com/raomaster/agent-security-policies/main/install.sh | bash -s -- --all
 
 # Specific agents only
@@ -21,7 +56,7 @@ curl -sSL https://raw.githubusercontent.com/raomaster/agent-security-policies/ma
 ### Windows (PowerShell)
 
 ```powershell
-# All agents
+# All agents + security skills
 irm https://raw.githubusercontent.com/raomaster/agent-security-policies/main/install.ps1 | iex
 
 # Or download and run with options
@@ -36,6 +71,8 @@ git clone https://github.com/raomaster/agent-security-policies.git
 cd agent-security-policies
 ./install.sh --all --target /path/to/your/project
 ```
+
+`--all` installs both agent configs and the full security skills pack. Use `--agent ...` without `--skills` for rules-only setup.
 
 ### What gets generated
 
@@ -52,17 +89,46 @@ All files reference `AGENT_RULES.md` with key rules inline. Non-destructive — 
 
 ## Contents
 
-```
+```text
 .
 ├── AGENT_RULES.md              ← Main system prompt (feed this to your agent)
+├── AGENT_RULES_LITE.md         ← Compact profile (~1K tokens) for local LLMs
 ├── README.md                   ← Setup instructions (you are here)
-└── policies/
-    ├── base_policy.yaml        ← 11 security domains (always active)
-    ├── owasp_asvs.yaml         ← ASVS 5.0.0 checklist (V1-V17)
-    ├── owasp_masvs.yaml        ← MASVS 2.1.0 controls (mobile only)
-    ├── cwe_top25.yaml          ← 25 CWE/SANS 2025 prevention rules
-    └── llm_security.yaml       ← OWASP LLM Top 10 2025 controls
+├── policies/                   ← YAML security policies (11 domains, OWASP, NIST)
+│   ├── base_policy.yaml        ← 11 security domains (always active)
+│   ├── owasp_asvs.yaml         ← ASVS 5.0.0 checklist (V1-V17)
+│   ├── owasp_masvs.yaml        ← MASVS 2.1.0 controls (mobile only)
+│   ├── cwe_top25.yaml          ← 25 CWE/SANS 2025 prevention rules
+│   └── llm_security.yaml       ← OWASP LLM Top 10 2025 controls
+└── skills/                     ← 🚀 Executable Agent Security Skills
+    ├── sast-scan/              ← Code vulnerabilities via Semgrep
+    ├── secrets-scan/           ← Hardcoded credentials via Gitleaks
+    ├── dependency-scan/        ← Known CVEs via Trivy
+    ├── container-scan/         ← Container image scanning via Trivy
+    ├── iac-scan/               ← Infrastructure as Code via Trivy
+    ├── threat-model/           ← STRIDE threat modeling
+    └── fix-findings/           ← Automated remediation from scan outputs
 ```
+
+---
+
+## 🚀 Agent Security Skills (NEW in v1.3)
+
+`agent-security-policies` ships with an extensible framework of **Security Skills** — atomic, zero-dependency actions that your AI agent can execute to proactively locate and fix security vulnerabilities.
+
+| Skill | Tool | Output |
+|-------|------|--------|
+| `sast-scan` | Semgrep | CWE-mapped code vulnerabilities (JSON) |
+| `secrets-scan` | Gitleaks | Hardcoded secrets and credentials (JSON) |
+| `dependency-scan` | Trivy | Known CVEs in packages (JSON) |
+| `container-scan` | Trivy | Container image misconfigurations (JSON) |
+| `iac-scan` | Trivy | Terraform / Helm / K8s issues (JSON) |
+| `threat-model` | Agent | STRIDE threat model (Markdown) |
+| `fix-findings` | Agent | Automated fixes from any scan output |
+
+Skills chain together: `sast-scan` → `fix-findings`, `dependency-scan` → `fix-findings`.
+
+> Want your agent to learn a new trick? See the [Skills Design and Creation Guide](skills/README.md).
 
 ---
 
@@ -107,11 +173,19 @@ Block insecure patterns (hardcoded secrets, shell=True, unvalidated input).
 Require ASVS chapter-by-chapter audit with severity scoring before final output.
 ```
 
+### Lite (for local LLMs)
+
+```
+Read and follow AGENT_RULES_LITE.md for compact secure coding baseline.
+```
+
 ---
 
-## GitHub Copilot
+## Agent Setup
 
-### VS Code + JetBrains (método universal)
+### GitHub Copilot
+
+#### VS Code + JetBrains (universal method)
 
 Create `.github/copilot-instructions.md` at the project root. Copilot Chat reads this file **automatically** in both VS Code and JetBrains — no IDE settings needed.
 
@@ -131,9 +205,9 @@ Key mandatory rules:
 Reference policies/ for detailed YAML security rulesets.
 ```
 
-### VS Code — additional option (settings.json)
+#### VS Code — additional option (settings.json)
 
-You can also point Copilot directly to the full rules file. Add this to `.vscode/settings.json` (project-level) or your User Settings JSON (global):
+Add this to `.vscode/settings.json` (project-level) or your User Settings JSON (global):
 
 ```json
 {
@@ -147,7 +221,7 @@ You can also point Copilot directly to the full rules file. Add this to `.vscode
 
 > **How to open Settings JSON:** `Ctrl+Shift+P` → `Preferences: Open User Settings (JSON)`
 
-### JetBrains — additional option (IDE settings)
+#### JetBrains — additional option (IDE settings)
 
 1. Go to **Settings** → **Languages & Frameworks** → **GitHub Copilot**
 2. Find the **Copilot Chat** → **Custom Instructions** field
@@ -160,7 +234,7 @@ Never hardcode secrets. Validate all inputs. Use typed exceptions.
 Reference policies/ for YAML security rulesets.
 ```
 
-### Summary
+#### Summary
 
 | IDE | Easiest method | Where |
 |-----|---------------|-------|
@@ -168,6 +242,183 @@ Reference policies/ for YAML security rulesets.
 | VS Code | Settings JSON | `github.copilot.chat.codeGeneration.instructions` |
 | JetBrains | Create file | `.github/copilot-instructions.md` (auto-detected) |
 | JetBrains | IDE Settings | Settings → GitHub Copilot → Custom Instructions |
+
+---
+
+### Cursor
+
+#### Option A: Project rules file
+
+Create `.cursorrules` at the project root:
+
+```
+Read and follow ALL rules in AGENT_RULES.md for every code change.
+Use policies/ as structured security reference.
+Apply OWASP ASVS 5.0.0, CWE/SANS Top 25 2025, NIST SSDF to all output.
+```
+
+#### Option B: IDE settings
+
+Go to **Cursor Settings** → **General** → **Rules for AI** and paste:
+
+```
+For this project, always read and follow the security and code quality rules
+defined in AGENT_RULES.md before writing any code. Apply the
+OWASP ASVS 5.0.0 checklist, CWE/SANS Top 25 2025, and all mandatory rules
+from that document to every change.
+```
+
+---
+
+### Windsurf
+
+Create `.windsurfrules` at the project root:
+
+```
+Read AGENT_RULES.md and follow every rule for all code generation,
+modification, and review. Apply the security policies in policies/
+to all output. Never skip security controls.
+```
+
+---
+
+### Claude (Anthropic)
+
+#### Via claude.ai Projects
+
+1. Go to **Projects** → **Project Knowledge**
+2. Upload `AGENT_RULES.md`
+3. Upload YAML files from `policies/` (and include `owasp_masvs.yaml` for mobile apps)
+4. In **Project Instructions**, paste:
+
+```
+You are a secure coding agent. Follow ALL rules in the uploaded
+AGENT_RULES.md document. Apply the YAML security policies to every
+code change. Never skip security controls. When auditing code, use
+the OWASP ASVS 5.0.0 checklist with severity scoring from the document.
+```
+
+#### Via API
+
+```python
+system_prompt = open("AGENT_RULES.md").read()
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    system=system_prompt,
+    messages=[{"role": "user", "content": "Build a REST API for user management"}]
+)
+```
+
+---
+
+### ChatGPT / GPT API
+
+#### Via Custom GPT (chat.openai.com)
+
+1. Go to **Explore GPTs** → **Create a GPT**
+2. In **Instructions**, paste the entire contents of `AGENT_RULES.md`
+3. Upload the 4 YAML policy files under **Knowledge**
+
+#### Via API
+
+```python
+system_prompt = open("AGENT_RULES.md").read()
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "Build a REST API for user management"}
+    ]
+)
+```
+
+---
+
+### Gemini Code Assist / Antigravity
+
+#### Gemini in IDE
+
+Create `.gemini/settings.json`:
+
+```json
+{
+  "codeAssist": {
+    "systemInstructions": "Read and follow all rules in AGENT_RULES.md. Apply OWASP ASVS 5.0.0, CWE/SANS Top 25 2025, and NIST SSDF to all code."
+  }
+}
+```
+
+#### Antigravity with workflows
+
+Create `.agent/workflows/secure-coding.md`:
+
+```markdown
+---
+description: Apply secure coding standards to all changes
+---
+1. Read `AGENT_RULES.md` for the complete security ruleset.
+2. Apply all 11 mandatory rule domains to every code change.
+3. Reference `policies/` for detailed YAML policies.
+4. When planning, include a STRIDE threat model.
+5. When reviewing, use the OWASP ASVS 5.0.0 checklist and severity scoring.
+```
+
+---
+
+### Cline / Roo Code (VS Code)
+
+Create `.clinerules` at the project root:
+
+```
+Read AGENT_RULES.md and follow ALL rules.
+Apply OWASP ASVS 5.0.0, CWE/SANS Top 25 2025, and NIST SSDF.
+Use policies/ YAML files as structured reference.
+```
+
+---
+
+### Aider
+
+#### Option A: Config file
+
+Create `.aider.conf.yml` at the project root:
+
+```yaml
+read:
+  - AGENT_RULES.md
+```
+
+#### Option B: CLI flag
+
+```bash
+aider --read AGENT_RULES.md
+```
+
+---
+
+### Continue.dev
+
+Edit `.continue/config.json`:
+
+```json
+{
+  "systemMessage": "Read and follow all security rules in AGENT_RULES.md. Apply OWASP ASVS 5.0.0, CWE/SANS Top 25, and all mandatory rules to every code change.",
+  "docs": [
+    {
+      "title": "Security Rules",
+      "startUrl": "AGENT_RULES.md"
+    }
+  ]
+}
+```
+
+---
+
+### OpenCode / PEA Engine
+
+Already integrated — policies are loaded from `policies/` automatically and injected into Planner, Executor, and Auditor prompts. No configuration needed.
 
 ---
 
@@ -197,177 +448,6 @@ services/
 ```
 
 This allows stricter rules (for example, payments) without affecting other services.
-
----
-
-## Cursor
-
-### Option A: Project rules file
-
-Create `.cursorrules` at the project root:
-
-```
-Read and follow ALL rules in AGENT_RULES.md for every code change.
-Use policies/ as structured security reference.
-Apply OWASP ASVS 5.0.0, CWE/SANS Top 25 2025, NIST SSDF to all output.
-```
-
-### Option B: IDE settings
-
-Go to **Cursor Settings** → **General** → **Rules for AI** and paste:
-
-```
-For this project, always read and follow the security and code quality rules
-defined in AGENT_RULES.md before writing any code. Apply the
-OWASP ASVS 5.0.0 checklist, CWE/SANS Top 25 2025, and all mandatory rules
-from that document to every change.
-```
-
----
-
-## Windsurf
-
-Create `.windsurfrules` at the project root:
-
-```
-Read AGENT_RULES.md and follow every rule for all code generation,
-modification, and review. Apply the security policies in policies/
-to all output. Never skip security controls.
-```
-
----
-
-## Claude (Anthropic)
-
-### Via claude.ai Projects
-
-1. Go to **Projects** → **Project Knowledge**
-2. Upload `AGENT_RULES.md`
-3. Upload YAML files from `policies/` (and include `owasp_masvs.yaml` for mobile apps)
-4. In **Project Instructions**, paste:
-
-```
-You are a secure coding agent. Follow ALL rules in the uploaded
-AGENT_RULES.md document. Apply the YAML security policies to every
-code change. Never skip security controls. When auditing code, use
-the OWASP ASVS 5.0.0 checklist with severity scoring from the document.
-```
-
-### Via API
-
-```python
-system_prompt = open("AGENT_RULES.md").read()
-
-response = client.messages.create(
-    model="claude-sonnet-4-20250514",
-    system=system_prompt,
-    messages=[{"role": "user", "content": "Build a REST API for user management"}]
-)
-```
-
----
-
-## ChatGPT / GPT API
-
-### Via Custom GPT (chat.openai.com)
-
-1. Go to **Explore GPTs** → **Create a GPT**
-2. In **Instructions**, paste the entire contents of `AGENT_RULES.md`
-3. Upload the 4 YAML policy files under **Knowledge**
-
-### Via API
-
-```python
-system_prompt = open("AGENT_RULES.md").read()
-
-response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": "Build a REST API for user management"}
-    ]
-)
-```
-
----
-
-## Gemini Code Assist / Antigravity
-
-### Gemini in IDE
-
-Create `.gemini/settings.json`:
-
-```json
-{
-  "codeAssist": {
-    "systemInstructions": "Read and follow all rules in AGENT_RULES.md. Apply OWASP ASVS 5.0.0, CWE/SANS Top 25 2025, and NIST SSDF to all code."
-  }
-}
-```
-
-### Antigravity with workflows
-
-Create `.agent/workflows/secure-coding.md`:
-
-```markdown
----
-description: Apply secure coding standards to all changes
----
-1. Read `AGENT_RULES.md` for the complete security ruleset.
-2. Apply all 11 mandatory rule domains to every code change.
-3. Reference `policies/` for detailed YAML policies.
-4. When planning, include a STRIDE threat model.
-5. When reviewing, use the OWASP ASVS 5.0.0 checklist and severity scoring.
-```
-
----
-
-## Cline / Roo Code (VS Code)
-
-Create `.clinerules` at the project root:
-
-```
-Read AGENT_RULES.md and follow ALL rules.
-Apply OWASP ASVS 5.0.0, CWE/SANS Top 25 2025, and NIST SSDF.
-Use policies/ YAML files as structured reference.
-```
-
----
-
-## Aider
-
-### Option A: Config file
-
-Create `.aider.conf.yml` at the project root:
-
-```yaml
-read:
-  - AGENT_RULES.md
-```
-
-### Option B: CLI flag
-
-```bash
-aider --read AGENT_RULES.md
-```
-
----
-
-## Continue.dev
-
-Edit `.continue/config.json`:
-
-```json
-{
-  "systemMessage": "Read and follow all security rules in AGENT_RULES.md. Apply OWASP ASVS 5.0.0, CWE/SANS Top 25, and all mandatory rules to every code change.",
-  "docs": [
-    {
-      "title": "Security Rules",
-      "startUrl": "AGENT_RULES.md"
-    }
-  ]
-}
-```
 
 ---
 
@@ -402,12 +482,6 @@ jobs:
 
 ---
 
-## OpenCode / PEA Engine
-
-Already integrated — policies are loaded from `policies/` automatically and injected into Planner, Executor, and Auditor prompts. No configuration needed.
-
----
-
 ## Standards Covered
 
 | Standard | Version |
@@ -423,3 +497,22 @@ Already integrated — policies are loaded from `policies/` automatically and in
 | SOLID Principles | — |
 | 12-Factor App | — |
 | DORA Metrics | — |
+
+---
+
+## Contributing
+
+Contributions are welcome! Here are some ways to get involved:
+
+- **Add security rules** — Reference a CWE, ASVS chapter, or NIST control in `AGENT_RULES.md`
+- **Create a new skill** — See the [Skills Design and Creation Guide](skills/README.md)
+- **Add agent support** — Add setup instructions for a new agent or IDE
+- **Improve policies** — Extend or refine YAML policy files in `policies/`
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and [ROADMAP.md](ROADMAP.md) for what's planned next.
+
+---
+
+## License
+
+[Apache 2.0](LICENSE) — free to use, modify, and distribute with attribution.

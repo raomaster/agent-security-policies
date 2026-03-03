@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `skills/README.md` — Skills Design and Creation Guide: anatomy of a `SKILL.md`, step-by-step process to add new skills, design principles (zero deps, one tool per skill, agent-agnostic)
+
+### Changed
+
+- `install.sh` and `install.ps1` — `--all` / `-All` now also install security skills to satisfy roadmap v1.3 delivery flow
+- `README.md` — professional rewrite: shields.io badges, stronger value proposition, full Table of Contents, `## Agent Setup` section grouping all 10 agents as `###` sub-headings, Skills table with tool/output columns, Lite profile, Contributing and License footer sections
+- `README.md` — fixed heading "método universal" → "universal method"
+- `README.md` — Quick Install now documents that `--all` includes the skills pack by default
+- `CONTRIBUTING.md` — added section 3 "Add or Improve Security Skills" with link to `skills/README.md`; sections renumbered to maintain correct order (1–5)
+- `ROADMAP.md` — v1.3 (`Security Skills`) moved to Completed with deliverables marked as implemented
+
 ## [1.1.0] — 2026-02-15
 
 ### Changed
