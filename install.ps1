@@ -15,7 +15,8 @@ param(
     [string]$Agent = "",
     [switch]$Skills,
     [ValidateSet("standard", "lite")]
-    [string]$Profile = "standard",
+    [Alias("Profile")]
+    [string]$RuleProfile = "standard",
     [string]$Target = ".",
     [switch]$Help
 )
@@ -28,11 +29,11 @@ $ErrorActionPreference = "Stop"
 $RepoUrl = "https://raw.githubusercontent.com/raomaster/agent-security-policies/main"
 
 # --- Helpers ---
-function Write-Info    { param([string]$Msg) Write-Host "  i " -ForegroundColor Blue -NoNewline; Write-Host $Msg }
-function Write-Ok      { param([string]$Msg) Write-Host "  + " -ForegroundColor Green -NoNewline; Write-Host $Msg }
-function Write-Warn    { param([string]$Msg) Write-Host "  ! " -ForegroundColor Yellow -NoNewline; Write-Host $Msg }
-function Write-Err     { param([string]$Msg) Write-Host "  X " -ForegroundColor Red -NoNewline; Write-Host $Msg }
-function Write-Step    { param([string]$Msg) Write-Host "`n-- $Msg --" -ForegroundColor White }
+function Write-Info { param([string]$Msg) Write-Host "  i " -ForegroundColor Blue -NoNewline; Write-Host $Msg }
+function Write-Ok { param([string]$Msg) Write-Host "  + " -ForegroundColor Green -NoNewline; Write-Host $Msg }
+function Write-Warn { param([string]$Msg) Write-Host "  ! " -ForegroundColor Yellow -NoNewline; Write-Host $Msg }
+function Write-Err { param([string]$Msg) Write-Host "  X " -ForegroundColor Red -NoNewline; Write-Host $Msg }
+function Write-Step { param([string]$Msg) Write-Host "`n-- $Msg --" -ForegroundColor White }
 
 function Show-Usage {
     Write-Host ""
@@ -97,7 +98,8 @@ $LocalMode = $false
 if ($ScriptDir -and (Test-Path "$ScriptDir\AGENT_RULES.md")) {
     $LocalMode = $true
     Write-Info "Local mode - reading from $ScriptDir"
-} else {
+}
+else {
     Write-Info "Remote mode - downloading from GitHub"
 }
 
@@ -107,7 +109,8 @@ function Get-PolicyFile {
 
     if ($LocalMode) {
         Copy-Item "$ScriptDir\$FileName" -Destination $Dest -Force
-    } else {
+    }
+    else {
         Invoke-RestMethod -Uri "$RepoUrl/$FileName" -OutFile $Dest
     }
 }
@@ -139,23 +142,25 @@ Reference policies/ for detailed YAML security rulesets:
 Write-Step "Installing security policies to $TargetDir"
 
 # AGENT_RULES.md (standard or lite based on profile)
-if ($Profile -eq "lite") {
+if ($RuleProfile -eq "lite") {
     $RulesFile = "AGENT_RULES_LITE.md"
     $RulesDest = "AGENT_RULES_LITE.md"
-} else {
+}
+else {
     $RulesFile = "AGENT_RULES.md"
     $RulesDest = "AGENT_RULES.md"
 }
 
 if (Test-Path "$TargetDir\$RulesDest") {
     Write-Warn "$RulesDest already exists - skipping (non-destructive)"
-} else {
+}
+else {
     Get-PolicyFile $RulesFile "$TargetDir\$RulesDest"
-    Write-Ok "$RulesDest (profile: $Profile)"
+    Write-Ok "$RulesDest (profile: $RuleProfile)"
 }
 
 # Also copy full rules if installing lite (for reference)
-if ($Profile -eq "lite" -and -not (Test-Path "$TargetDir\AGENT_RULES.md")) {
+if ($RuleProfile -eq "lite" -and -not (Test-Path "$TargetDir\AGENT_RULES.md")) {
     Get-PolicyFile "AGENT_RULES.md" "$TargetDir\AGENT_RULES.md"
     Write-Ok "AGENT_RULES.md (full reference)"
 }
@@ -169,7 +174,8 @@ foreach ($policy in $PolicyFiles) {
     $dest = Join-Path $PoliciesDir $policy
     if (Test-Path $dest) {
         Write-Warn "policies/$policy already exists - skipping"
-    } else {
+    }
+    else {
         Get-PolicyFile "policies/$policy" $dest
         Write-Ok "policies/$policy"
     }
@@ -192,12 +198,14 @@ foreach ($ag in $AgentList) {
                 $content = Get-Content $copilotFile -Raw -ErrorAction SilentlyContinue
                 if ($content -and $content -match "AGENT_RULES\.md") {
                     Write-Warn ".github/copilot-instructions.md already references AGENT_RULES.md - skipping"
-                } else {
+                }
+                else {
                     $appendText = "`n`n<!-- agent-security-policies -->`n$InstructionsBlock"
                     Add-Content -Path $copilotFile -Value $appendText
                     Write-Ok ".github/copilot-instructions.md - appended security rules"
                 }
-            } else {
+            }
+            else {
                 $copilotContent = "# Security Policy Instructions`n`n$InstructionsBlock"
                 Set-Content -Path $copilotFile -Value $copilotContent
                 Write-Ok ".github/copilot-instructions.md - created"
@@ -213,12 +221,14 @@ foreach ($ag in $AgentList) {
                 $content = Get-Content $codexFile -Raw -ErrorAction SilentlyContinue
                 if ($content -and $content -match "AGENT_RULES\.md") {
                     Write-Warn "AGENTS.md already references AGENT_RULES.md - skipping"
-                } else {
+                }
+                else {
                     $appendText = "`n`n<!-- agent-security-policies -->`n## Security Policy`n`n$InstructionsBlock"
                     Add-Content -Path $codexFile -Value $appendText
                     Write-Ok "AGENTS.md - appended security rules"
                 }
-            } else {
+            }
+            else {
                 $codexContent = "# Project Agent Instructions`n`n## Security Policy`n`n$InstructionsBlock"
                 Set-Content -Path $codexFile -Value $codexContent
                 Write-Ok "AGENTS.md - created"
@@ -234,12 +244,14 @@ foreach ($ag in $AgentList) {
                 $content = Get-Content $claudeFile -Raw -ErrorAction SilentlyContinue
                 if ($content -and $content -match "AGENT_RULES\.md") {
                     Write-Warn "CLAUDE.md already references AGENT_RULES.md - skipping"
-                } else {
+                }
+                else {
                     $appendText = "`n`n<!-- agent-security-policies -->`n## Security Policy`n`n$InstructionsBlock"
                     Add-Content -Path $claudeFile -Value $appendText
                     Write-Ok "CLAUDE.md - appended security rules"
                 }
-            } else {
+            }
+            else {
                 $claudeContent = "# Project Instructions`n`n## Security Policy`n`n$InstructionsBlock"
                 Set-Content -Path $claudeFile -Value $claudeContent
                 Write-Ok "CLAUDE.md - created"
@@ -255,7 +267,8 @@ foreach ($ag in $AgentList) {
 
             if (Test-Path $agFile) {
                 Write-Warn ".agent/rules/security.md already exists - skipping"
-            } else {
+            }
+            else {
                 $agContent = @"
 ---
 description: Security policy - OWASP ASVS, CWE Top 25, NIST SSDF
@@ -289,7 +302,8 @@ if ($Skills) {
         $skillFile = Join-Path $skillDir "SKILL.md"
         if (Test-Path $skillFile) {
             Write-Warn "skills/$skill/SKILL.md already exists - skipping"
-        } else {
+        }
+        else {
             Get-PolicyFile "skills/$skill/SKILL.md" $skillFile
             Write-Ok "skills/$skill/SKILL.md"
         }
@@ -334,7 +348,8 @@ if ($Skills) {
                     $agSkillFile = Join-Path $agSkillDir "SKILL.md"
                     if (Test-Path $agSkillFile) {
                         Write-Warn ".agent/skills/$skill/SKILL.md already exists - skipping"
-                    } else {
+                    }
+                    else {
                         Copy-Item (Join-Path $skillsDir "$skill\SKILL.md") -Destination $agSkillFile
                         Write-Ok ".agent/skills/$skill/SKILL.md"
                     }
@@ -350,7 +365,8 @@ if ($Skills) {
                     $cmdFile = Join-Path $claudeCmdsDir "$skill.md"
                     if (Test-Path $cmdFile) {
                         Write-Warn ".claude/commands/$skill.md already exists - skipping"
-                    } else {
+                    }
+                    else {
                         $raw = Get-Content (Join-Path $skillsDir "$skill\SKILL.md") -Raw
                         $stripped = Remove-YamlFrontmatter $raw
                         Set-Content -Path $cmdFile -Value $stripped
@@ -368,7 +384,8 @@ if ($Skills) {
                     $promptFile = Join-Path $promptsDir "$skill.prompt.md"
                     if (Test-Path $promptFile) {
                         Write-Warn ".github/prompts/$skill.prompt.md already exists - skipping"
-                    } else {
+                    }
+                    else {
                         $raw = Get-Content (Join-Path $skillsDir "$skill\SKILL.md") -Raw
                         $stripped = Remove-YamlFrontmatter $raw
                         Set-Content -Path $promptFile -Value $stripped
@@ -385,7 +402,8 @@ if ($Skills) {
                     $existingContent = if (Test-Path $codexFile) { Get-Content $codexFile -Raw -ErrorAction SilentlyContinue } else { "" }
                     if ($existingContent -and $existingContent -match "skill:$skill") {
                         Write-Warn "AGENTS.md already contains $skill skill - skipping"
-                    } else {
+                    }
+                    else {
                         $raw = Get-Content (Join-Path $skillsDir "$skill\SKILL.md") -Raw
                         $stripped = Remove-YamlFrontmatter $raw
                         $appendText = "`n`n<!-- skill:$skill -->`n$stripped"
@@ -403,7 +421,7 @@ Write-Step "Done!"
 Write-Host ""
 Write-Info "Files installed in: $TargetDir"
 Write-Info "Agents configured: $Agent"
-Write-Info "Profile: $Profile"
+Write-Info "Profile: $RuleProfile"
 if ($Skills) { Write-Info "Skills installed: $($SkillsList -join ', ')" }
 Write-Host ""
 Write-Host "  Next steps:" -ForegroundColor White
