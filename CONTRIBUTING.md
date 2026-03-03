@@ -20,7 +20,15 @@ Policy files in `policies/` are YAML-structured rulesets. Each policy should:
 - Map rules to standards (CWE ID, ASVS chapter, etc.)
 - Include actionable prevention guidance
 
-### 3. Add Agent Setup Instructions
+### 3. Add or Improve Security Skills
+
+Help us expand the capabilities of agents by defining new atomic skills in the `skills/` directory.
+
+- Read the [Skills Design and Creation Guide](skills/README.md) for step-by-step instructions.
+- Ensure the skill requires zero local dependencies (prefer Docker).
+- Output must be structured (JSON/XML) and mapped to CWEs and rules in `AGENT_RULES.md`.
+
+### 4. Add Agent Setup Instructions
 
 Help us cover more agents! Add setup instructions to `README.md`:
 
@@ -29,7 +37,7 @@ Help us cover more agents! Add setup instructions to `README.md`:
 - IDE-specific settings if applicable
 - Test that it actually works with the agent
 
-### 4. Report Issues
+### 5. Report Issues
 
 - Rules that are incorrect or outdated
 - Standards that have been updated
@@ -72,3 +80,5 @@ Every rule must be traceable to at least one of:
 ## License
 
 By contributing, you agree that your contributions will be licensed under the Apache 2.0 License.
+
+

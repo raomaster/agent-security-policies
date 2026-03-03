@@ -44,6 +44,19 @@
 | `--target` flag for custom project directory | ✅ |
 | Quick Install section in README.md | ✅ |
 
+### v1.3 — Security Skills ✅
+
+| Deliverable | Status |
+|-------------|--------|
+| Detection skills published: `sast-scan`, `secrets-scan`, `dependency-scan`, `container-scan`, `iac-scan` | ✅ |
+| Analysis skill published: `threat-model` (STRIDE output) | ✅ |
+| Remediation skill published: `fix-findings` (accepts outputs from detection skills) | ✅ |
+| Detection skills include Docker-first + local execution paths | ✅ |
+| Structured JSON outputs documented with CWE/CVE mapping guidance | ✅ |
+| `AGENT_RULES_LITE.md` included for compact profile (`--profile lite`) | ✅ |
+| Skills installation flow available for Antigravity and Claude CLI (plus Copilot/Codex) | ✅ |
+| `install.sh --all` and `install.ps1 -All` include skills installation | ✅ |
+
 Agents auto-configured:
 
 | Flag | Agent | File generated |
@@ -56,71 +69,6 @@ Agents auto-configured:
 ---
 
 ## Next Up
-
-### v1.3 — Security Skills
-
-> **Goal:** Reusable agent skills that run real security tools (SAST, SCA, secrets, IaC) and let the agent remediate findings.
-
-**Priority: 🔴 High** — This is the core differentiator: real tools + AI remediation.
-
-**Detection skills** — each runs ONE tool, produces ONE type of finding:
-
-| Skill | Tool | Finding type | Output |
-|-------|------|-------------|--------|
-| `sast-scan` | Semgrep | **CWE** (code vulnerabilities) | SARIF/JSON |
-| `secrets-scan` | Gitleaks | **Secrets** (hardcoded credentials) | JSON |
-| `dependency-scan` | Trivy (fs mode) | **CVE** (vulnerable dependencies) | JSON |
-| `container-scan` | Trivy (image mode) | **CVE** (container image vulns) | JSON |
-| `iac-scan` | KICS (Checkmarx) | **Misconfigurations** (IaC) | JSON |
-
-**Analysis skills** — agent-driven, no external tool:
-
-| Skill | Input | Output |
-|-------|-------|--------|
-| `threat-model` | Component/feature description | STRIDE threat model (Markdown) |
-
-**Remediation skills** — agent takes scan output and proposes fixes:
-
-| Skill | Input | Output |
-|-------|-------|--------|
-| `fix-findings` | JSON output from any detection skill | Code changes based on AGENT_RULES.md |
-
-```
-sast-scan  ─────┐
-secrets-scan ───┤
-dependency-scan ┼──→ fix-findings ──→ remediated code
-container-scan ─┤
-iac-scan ───────┘
-```
-
-Skills are installed per-agent by `install.sh` / `install.ps1`:
-
-| Agent | Skills location |
-|-------|----------------|
-| Antigravity | `.agent/skills/*/SKILL.md` |
-| Claude CLI | `.claude/commands/*.md` |
-| Copilot | `.github/prompts/*.prompt.md` |
-| Codex CLI | Referenced in `AGENTS.md` |
-
-**Compact version for local LLMs:**
-
-| Deliverable | Tokens | Use case |
-|-------------|--------|----------|
-| `AGENT_RULES.md` (standard) | ~3K | Cloud LLMs (GPT-4o, Claude, Gemini) |
-| `AGENT_RULES_LITE.md` (compact) | ~1K | Local LLMs (Ollama, LM Studio, llama.cpp) |
-
-The lite version keeps only the top rules + CWE IDs, no explanations. Install scripts select via `--profile lite`.
-
-**Definition of Done:**
-- [ ] Each detection skill runs via Docker if tool not installed locally
-- [ ] Each skill outputs structured JSON with CWE/CVE mapping
-- [ ] `fix-findings` accepts output from any detection skill
-- [ ] `threat-model` generates STRIDE table for a given component
-- [ ] `AGENT_RULES_LITE.md` exists and is ≤1K tokens
-- [ ] Skills work with Antigravity + Claude CLI (minimum)
-- [ ] `install.sh --all` installs skills in correct locations
-
----
 
 ### v1.4 — CLI Tool (npx)
 

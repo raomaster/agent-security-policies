@@ -17,6 +17,9 @@ AGENTS=""
 ALL=false
 VERBOSE=false
 LOCAL_MODE=false
+INSTALL_SKILLS=false
+PROFILE="standard"
+SKILLS_LIST="sast-scan secrets-scan dependency-scan container-scan iac-scan threat-model fix-findings"
 
 # ─── Colors ──────────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -41,22 +44,35 @@ Usage:
   install.sh [OPTIONS]
 
 Options:
-  --all                   Install for all supported agents
+  --all                   Install for all supported agents (includes skills)
   --agent <list>          Comma-separated agent list: copilot,codex,claude,antigravity
+  --skills                Also install security skills (sast-scan, secrets-scan, etc.)
+  --profile <name>        Rule profile: standard (~3K tokens) or lite (~1K tokens)
   --target <dir>          Target project directory (default: current directory)
   --verbose               Show detailed output
   --help                  Show this help
 
 Examples:
   install.sh --all
-  install.sh --agent copilot,claude
+  install.sh --all --skills
+  install.sh --agent copilot,claude --skills
   install.sh --agent codex --target ./my-project
+  install.sh --all --profile lite
 
 Supported agents:
   copilot       GitHub Copilot (VS Code + JetBrains)
   codex         OpenAI Codex CLI
   claude        Claude CLI (Claude Code)
   antigravity   Google Antigravity (Gemini)
+
+Skills (use --skills to install):
+  sast-scan         Semgrep — CWE code vulnerabilities
+  secrets-scan      Gitleaks — hardcoded credentials
+  dependency-scan   Trivy fs — CVE in dependencies
+  container-scan    Trivy image — CVE in containers
+  iac-scan          KICS — IaC misconfigurations
+  threat-model      STRIDE threat modeling (agent-only)
+  fix-findings      Remediate findings from any scan
 EOF
   exit 0
 }
@@ -66,6 +82,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --all)        ALL=true; shift ;;
     --agent)      AGENTS="$2"; shift 2 ;;
+    --skills)     INSTALL_SKILLS=true; shift ;;
+    --profile)    PROFILE="$2"; shift 2 ;;
     --target)     TARGET_DIR="$2"; shift 2 ;;
     --verbose)    VERBOSE=true; shift ;;
     --help|-h)    usage ;;
@@ -73,8 +91,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ "$PROFILE" != "standard" && "$PROFILE" != "lite" ]]; then
+  err "Invalid --profile value: $PROFILE (supported: standard, lite)"
+  exit 1
+fi
+
 if [[ "$ALL" == true ]]; then
   AGENTS="copilot,codex,claude,antigravity"
+  INSTALL_SKILLS=true
 fi
 
 if [[ -z "$AGENTS" ]]; then
@@ -112,12 +136,26 @@ fetch_file() {
 # ─── Step 1: Copy core files ─────────────────────────────────────────
 step "Installing security policies to $TARGET_DIR"
 
-# AGENT_RULES.md
-if [[ -f "$TARGET_DIR/AGENT_RULES.md" ]]; then
-  warn "AGENT_RULES.md already exists — skipping (non-destructive)"
+# AGENT_RULES.md (standard or lite based on profile)
+if [[ "$PROFILE" == "lite" ]]; then
+  RULES_FILE="AGENT_RULES_LITE.md"
+  RULES_DEST="AGENT_RULES_LITE.md"
 else
+  RULES_FILE="AGENT_RULES.md"
+  RULES_DEST="AGENT_RULES.md"
+fi
+
+if [[ -f "$TARGET_DIR/$RULES_DEST" ]]; then
+  warn "$RULES_DEST already exists — skipping (non-destructive)"
+else
+  fetch_file "$RULES_FILE" "$TARGET_DIR/$RULES_DEST"
+  ok "$RULES_DEST (profile: $PROFILE)"
+fi
+
+# Also copy full rules if installing lite (for reference)
+if [[ "$PROFILE" == "lite" && ! -f "$TARGET_DIR/AGENT_RULES.md" ]]; then
   fetch_file "AGENT_RULES.md" "$TARGET_DIR/AGENT_RULES.md"
-  ok "AGENT_RULES.md"
+  ok "AGENT_RULES.md (full reference)"
 fi
 
 # policies/
@@ -263,15 +301,104 @@ ANTIGRAVITY_EOF
   esac
 done
 
+# ─── Step 3: Install skills if requested ──────────────────────────────
+if [[ "$INSTALL_SKILLS" == true ]]; then
+  step "Installing security skills"
+
+  # Copy skills/ directory
+  mkdir -p "$TARGET_DIR/skills"
+  for skill in $SKILLS_LIST; do
+    mkdir -p "$TARGET_DIR/skills/$skill"
+    if [[ -f "$TARGET_DIR/skills/$skill/SKILL.md" ]]; then
+      warn "skills/$skill/SKILL.md already exists — skipping"
+    else
+      fetch_file "skills/$skill/SKILL.md" "$TARGET_DIR/skills/$skill/SKILL.md"
+      ok "skills/$skill/SKILL.md"
+    fi
+  done
+
+  # Install skills per agent
+  for agent in "${AGENT_LIST[@]}"; do
+    agent=$(echo "$agent" | xargs)
+    case "$agent" in
+
+      # Antigravity — native SKILL.md format
+      antigravity)
+        step "Installing skills for Antigravity"
+        for skill in $SKILLS_LIST; do
+          SKILL_DIR="$TARGET_DIR/.agent/skills/$skill"
+          mkdir -p "$SKILL_DIR"
+          if [[ -f "$SKILL_DIR/SKILL.md" ]]; then
+            warn ".agent/skills/$skill/SKILL.md already exists — skipping"
+          else
+            cp "$TARGET_DIR/skills/$skill/SKILL.md" "$SKILL_DIR/SKILL.md"
+            ok ".agent/skills/$skill/SKILL.md"
+          fi
+        done
+        ;;
+
+      # Claude CLI — slash commands
+      claude)
+        step "Installing skills for Claude CLI"
+        mkdir -p "$TARGET_DIR/.claude/commands"
+        for skill in $SKILLS_LIST; do
+          CMD_FILE="$TARGET_DIR/.claude/commands/$skill.md"
+          if [[ -f "$CMD_FILE" ]]; then
+            warn ".claude/commands/$skill.md already exists — skipping"
+          else
+            # Strip YAML frontmatter for Claude CLI format
+            sed '1{/^---$/d}; /^---$/,/^---$/d' "$TARGET_DIR/skills/$skill/SKILL.md" > "$CMD_FILE"
+            ok ".claude/commands/$skill.md"
+          fi
+        done
+        ;;
+
+      # Copilot — prompt files
+      copilot)
+        step "Installing skills for Copilot"
+        mkdir -p "$TARGET_DIR/.github/prompts"
+        for skill in $SKILLS_LIST; do
+          PROMPT_FILE="$TARGET_DIR/.github/prompts/$skill.prompt.md"
+          if [[ -f "$PROMPT_FILE" ]]; then
+            warn ".github/prompts/$skill.prompt.md already exists — skipping"
+          else
+            # Strip YAML frontmatter for Copilot prompt format
+            sed '1{/^---$/d}; /^---$/,/^---$/d' "$TARGET_DIR/skills/$skill/SKILL.md" > "$PROMPT_FILE"
+            ok ".github/prompts/$skill.prompt.md"
+          fi
+        done
+        ;;
+
+      # Codex CLI — append to AGENTS.md
+      codex)
+        step "Installing skills for Codex CLI"
+        CODEX_FILE="$TARGET_DIR/AGENTS.md"
+        for skill in $SKILLS_LIST; do
+          if grep -q "skill:$skill" "$CODEX_FILE" 2>/dev/null; then
+            warn "AGENTS.md already contains $skill skill — skipping"
+          else
+            echo -e "\n<!-- skill:$skill -->" >> "$CODEX_FILE"
+            sed '1{/^---$/d}; /^---$/,/^---$/d' "$TARGET_DIR/skills/$skill/SKILL.md" >> "$CODEX_FILE"
+            ok "AGENTS.md — appended $skill skill"
+          fi
+        done
+        ;;
+    esac
+  done
+fi
+
 # ─── Summary ─────────────────────────────────────────────────────────
 step "Done!"
 echo ""
 info "Files installed in: $TARGET_DIR"
 info "Agents configured: $AGENTS"
+info "Profile: $PROFILE"
+[[ "$INSTALL_SKILLS" == true ]] && info "Skills installed: $(echo $SKILLS_LIST | tr ' ' ', ')"
 echo ""
 echo -e "${BOLD}Next steps:${NC}"
 echo "  1. Commit the new files to your repository"
 echo "  2. Your AI agent will automatically detect the security rules"
 echo "  3. Read AGENT_RULES.md for the full security ruleset"
+[[ "$INSTALL_SKILLS" == true ]] && echo "  4. Try a skill: ask your agent to run sast-scan or threat-model"
 echo ""
 echo -e "${BLUE}Docs:${NC} https://github.com/raomaster/agent-security-policies"
