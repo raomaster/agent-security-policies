@@ -499,19 +499,31 @@ jobs:
 
 ## Standards Covered
 
-| Standard | Version |
-|----------|---------|
-| OWASP ASVS | 5.0.0 |
-| OWASP MASVS (mobile) | 2.1.0 |
-| OWASP Top 10 LLM | 2025 |
-| CWE/SANS Top 25 | 2025 |
-| NIST SP 800-218 (SSDF) | 1.1 |
-| NIST SP 800-53 | Rev 5 |
-| NIST AI RMF | 1.0 |
-| SLSA | 1.0 |
-| SOLID Principles | — |
-| 12-Factor App | — |
-| DORA Metrics | — |
+### Full implementation (dedicated policy files + rules)
+
+| Standard | Version | Coverage |
+|----------|---------|----------|
+| OWASP ASVS | 5.0.0 | Policy YAML + V1-V17 audit checklist in AGENT_RULES.md |
+| OWASP MASVS (mobile) | 2.1.0 | Policy YAML with 8 mobile security categories |
+| OWASP Top 10 LLM | 2025 | Policy YAML covering LLM01-LLM10 risks |
+| CWE/SANS Top 25 | 2025 | Policy YAML + all 25 weaknesses with prevention rules |
+
+### Implemented via rules (no dedicated policy file)
+
+| Standard | Version | Coverage |
+|----------|---------|----------|
+| SLSA | 1.0 | Dependency pinning, CVE audit, provenance tracking (rule 7) |
+| NIST SP 800-218 (SSDF) | 1.1 | Practices implemented across rules (input validation, secrets, logging, dependencies) — mapped to ASVS/CWE |
+| NIST SP 800-53 | Rev 5 | AU-3 (audit logging), SI (input integrity), SC (TLS/crypto), SA-12 (supply chain) — covered by rules 5, 6, 7 |
+
+### Referenced (security-relevant subset)
+
+| Standard | Version | Coverage |
+|----------|---------|----------|
+| NIST AI RMF | 1.0 | Applied when generating AI/ML code — LLM-specific risks covered via OWASP LLM Top 10 |
+| SOLID Principles | — | Design guidance referenced in code quality requirements |
+| 12-Factor App | — | Security-relevant factors: config from env (III), explicit deps (II), logs as streams (XI) |
+| DORA Metrics | — | Design goals: high deployment frequency, low change failure rate |
 
 ---
 
