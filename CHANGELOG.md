@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.1] — 2026-03-05
+
+### Added
+
+- `--gitignore` CLI flag — adds all installed files to `.gitignore` with idempotent comment markers (`# >>> agent-security-policies >>>` / `# <<< agent-security-policies <<<`)
+- Interactive mode now asks "Add installed files to .gitignore?" (default: No)
+- Pre-install safety check — when existing agent config files are detected (e.g. `CLAUDE.md`, `AGENTS.md`), the installer shows a notice explaining that content will be appended (not replaced) and asks for confirmation before proceeding
+
+### Changed
+
+- `install()` is now async to support the interactive confirmation prompt
+- `printSummary()` shows "Commit the updated .gitignore" when `--gitignore` is active
+
 ## [1.4.0] — 2026-03-03
 
 ### Added

@@ -2,6 +2,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import {
     SUPPORTED_AGENTS,
@@ -25,6 +26,7 @@ export interface InstallOptions {
     profile: string;
     skills: boolean;
     target: string;
+    gitignore: boolean;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -212,6 +214,135 @@ function installSkills(targetDir: string, agentIds: string[]): void {
     }
 }
 
+// ─── Step 4: .gitignore ─────────────────────────────────────────────
+const MARKER_START = "# >>> agent-security-policies >>>";
+const MARKER_END = "# <<< agent-security-policies <<<";
+
+function updateGitignore(targetDir: string, opts: InstallOptions): void {
+    step("Adding installed files to .gitignore");
+
+    const profileConfig = PROFILES.find((p) => p.id === opts.profile) ?? PROFILES[0];
+
+    // Build entries based on what was actually installed
+    const entries: string[] = [];
+
+    // Core files (always installed)
+    entries.push("AGENT_RULES.md");
+    if (opts.profile === "lite") {
+        entries.push("AGENT_RULES_LITE.md");
+    }
+    entries.push("policies/");
+
+    // Agent config files
+    for (const agentId of opts.agents) {
+        const agent = getAgentById(agentId);
+        if (!agent) continue;
+        entries.push(agent.configPath);
+    }
+
+    // Skills
+    if (opts.skills) {
+        entries.push("skills/");
+
+        // Collect unique skill directories per agent
+        const skillDirs = new Set<string>();
+        for (const agentId of opts.agents) {
+            const agent = getAgentById(agentId);
+            if (!agent) continue;
+
+            const format = agent.skillFormat;
+            switch (format.type) {
+                case "copy":
+                case "strip-frontmatter": {
+                    // Extract directory from pattern like ".claude/commands/{skill}.md"
+                    const dir = path.dirname(format.destPattern).replace(/\\/g, "/");
+                    skillDirs.add(dir + "/");
+                    break;
+                }
+                // "append" and "none" don't create separate skill directories
+            }
+        }
+        for (const dir of skillDirs) {
+            entries.push(dir);
+        }
+    }
+
+    // Build the block
+    const block = [MARKER_START, ...entries, MARKER_END].join("\n");
+
+    const gitignorePath = path.join(targetDir, ".gitignore");
+
+    if (fs.existsSync(gitignorePath)) {
+        let content = fs.readFileSync(gitignorePath, "utf-8");
+        const startIdx = content.indexOf(MARKER_START);
+        const endIdx = content.indexOf(MARKER_END);
+
+        if (startIdx !== -1 && endIdx !== -1) {
+            // Replace existing block
+            content =
+                content.substring(0, startIdx) +
+                block +
+                content.substring(endIdx + MARKER_END.length);
+            fs.writeFileSync(gitignorePath, content, "utf-8");
+            ok(".gitignore — updated existing block");
+        } else {
+            // Append to end
+            const separator = content.endsWith("\n") ? "\n" : "\n\n";
+            fs.writeFileSync(gitignorePath, content + separator + block + "\n", "utf-8");
+            ok(".gitignore — appended entries");
+        }
+    } else {
+        // Create new .gitignore
+        fs.writeFileSync(gitignorePath, block + "\n", "utf-8");
+        ok(".gitignore — created");
+    }
+}
+
+// ─── Pre-install check: detect existing files ──────────────────────
+function detectExistingConfigs(targetDir: string, agentIds: string[]): string[] {
+    const existing: string[] = [];
+    for (const agentId of agentIds) {
+        const agent = getAgentById(agentId);
+        if (!agent) continue;
+        const configPath = path.join(targetDir, agent.configPath);
+        if (fs.existsSync(configPath)) {
+            const content = fs.readFileSync(configPath, "utf-8");
+            if (!content.includes("AGENT_RULES.md")) {
+                existing.push(agent.configPath);
+            }
+        }
+    }
+    return existing;
+}
+
+async function confirmAppend(existingFiles: string[]): Promise<boolean> {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    console.log("");
+    warn("The following files already exist in the target directory:");
+    console.log("");
+    for (const file of existingFiles) {
+        console.log(`    • ${file}`);
+    }
+    console.log("");
+    info("These files will NOT be replaced. Security rules will be appended");
+    info("to the end of each file, preserving your existing content.");
+    console.log("");
+
+    const answer = await new Promise<string>((resolve) => {
+        rl.question("  Continue? (Y/n): ", (ans) => resolve(ans.trim()));
+    });
+    rl.close();
+
+    if (answer.toLowerCase() === "n" || answer.toLowerCase() === "no") {
+        return false;
+    }
+    return true;
+}
+
 // ─── Summary ────────────────────────────────────────────────────────
 function printSummary(opts: InstallOptions): void {
     step("Done!");
@@ -222,9 +353,16 @@ function printSummary(opts: InstallOptions): void {
     if (opts.skills) {
         info(`Skills installed: ${SKILLS_LIST.map((s) => s.id).join(", ")}`);
     }
+    if (opts.gitignore) {
+        info("Installed files added to .gitignore");
+    }
     console.log("");
     console.log("  Next steps:");
-    console.log("    1. Commit the new files to your repository");
+    if (opts.gitignore) {
+        console.log("    1. Commit the updated .gitignore to your repository");
+    } else {
+        console.log("    1. Commit the new files to your repository");
+    }
     console.log("    2. Your AI agent will automatically detect the security rules");
     console.log("    3. Read AGENT_RULES.md for the full security ruleset");
     if (opts.skills) {
@@ -233,12 +371,12 @@ function printSummary(opts: InstallOptions): void {
         );
     }
     console.log("");
-    console.log("  Docs: https://github.com/raomaster/agent-security-policies");
+    console.log("  Docs: github.com/raomaster/agent-security-policies");
     console.log("");
 }
 
 // ─── Main entry ─────────────────────────────────────────────────────
-export function install(opts: InstallOptions): void {
+export async function install(opts: InstallOptions): Promise<void> {
     const targetDir = path.resolve(opts.target);
 
     // Validate target exists
@@ -261,6 +399,16 @@ export function install(opts: InstallOptions): void {
         }
     }
 
+    // Pre-install check: warn about existing config files
+    const existingConfigs = detectExistingConfigs(targetDir, opts.agents);
+    if (existingConfigs.length > 0) {
+        const confirmed = await confirmAppend(existingConfigs);
+        if (!confirmed) {
+            info("Installation cancelled.");
+            process.exit(0);
+        }
+    }
+
     // Step 1: Core files
     installCoreFiles(targetDir, opts.profile);
 
@@ -270,6 +418,11 @@ export function install(opts: InstallOptions): void {
     // Step 3: Skills
     if (opts.skills) {
         installSkills(targetDir, opts.agents);
+    }
+
+    // Step 4: .gitignore
+    if (opts.gitignore) {
+        updateGitignore(targetDir, opts);
     }
 
     // Summary

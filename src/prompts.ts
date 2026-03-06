@@ -8,6 +8,7 @@ interface InteractiveResult {
     agents: string[];
     profile: string;
     skills: boolean;
+    gitignore: boolean;
 }
 
 function createInterface(): readline.Interface {
@@ -100,8 +101,16 @@ export async function interactiveMode(): Promise<InteractiveResult> {
         const skills =
             skillsAnswer.toLowerCase() !== "n" && skillsAnswer.toLowerCase() !== "no";
 
+        // ── Add to .gitignore? ──
+        const gitignoreAnswer = await ask(
+            rl,
+            `\n  Add installed files to .gitignore? ${dim("(y/N)")}: `
+        );
+        const gitignore =
+            gitignoreAnswer.toLowerCase() === "y" || gitignoreAnswer.toLowerCase() === "yes";
+
         console.log("");
-        return { agents, profile, skills };
+        return { agents, profile, skills, gitignore };
     } finally {
         rl.close();
     }

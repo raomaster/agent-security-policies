@@ -1,7 +1,7 @@
 # agent-security-policies
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.1-green.svg)](CHANGELOG.md)
 [![OWASP ASVS](https://img.shields.io/badge/OWASP_ASVS-5.0.0-orange.svg)](policies/owasp_asvs.yaml)
 [![CWE Top 25](https://img.shields.io/badge/CWE_Top_25-2025-red.svg)](policies/cwe_top25.yaml)
 
@@ -52,6 +52,9 @@ npx agent-security-policies --all
 # Specific agents only
 npx agent-security-policies --agent copilot,claude --skills
 
+# Local-only setup (files gitignored, each dev runs npx after clone)
+npx agent-security-policies --all --gitignore
+
 # Interactive mode — guided setup
 npx agent-security-policies
 
@@ -99,7 +102,7 @@ cd agent-security-policies
 | Claude CLI | `CLAUDE.md` | Claude Code (Anthropic) |
 | Antigravity | `.agent/rules/security.md` | Gemini (Google) |
 
-All files reference `AGENT_RULES.md` with key rules inline. Non-destructive — existing files are not overwritten.
+All files reference `AGENT_RULES.md` with key rules inline. Non-destructive — existing files are never overwritten; security rules are appended with your confirmation.
 
 ---
 

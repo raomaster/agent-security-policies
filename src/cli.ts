@@ -31,6 +31,7 @@ function showUsage(): void {
     console.log(`    --skills             Also install security skills`);
     console.log(`    --profile <name>     standard ${dim("(~3K tokens)")} or lite ${dim("(~1K tokens)")}`);
     console.log(`    --target <dir>       Target project directory ${dim("(default: .)")}`);
+    console.log(`    --gitignore          Add installed files to .gitignore`);
     console.log(`    --list               Show available agents, profiles, and skills`);
     console.log(`    --version, -v        Show version`);
     console.log(`    --help, -h           Show this help`);
@@ -75,6 +76,7 @@ interface ParsedArgs {
     skills: boolean;
     profile: string;
     target: string;
+    gitignore: boolean;
     help: boolean;
     version: boolean;
     list: boolean;
@@ -87,6 +89,7 @@ function parseArgs(argv: string[]): ParsedArgs {
         skills: false,
         profile: "standard",
         target: ".",
+        gitignore: false,
         help: false,
         version: false,
         list: false,
@@ -110,6 +113,9 @@ function parseArgs(argv: string[]): ParsedArgs {
                 break;
             case "--skills":
                 args.skills = true;
+                break;
+            case "--gitignore":
+                args.gitignore = true;
                 break;
             case "--profile":
                 i++;
@@ -178,6 +184,7 @@ async function main(): Promise<void> {
         args.agents = result.agents;
         args.profile = result.profile;
         args.skills = result.skills;
+        args.gitignore = result.gitignore;
     }
 
     if (args.agents.length === 0) {
@@ -188,11 +195,12 @@ async function main(): Promise<void> {
 
     // Run installer
     banner();
-    install({
+    await install({
         agents: args.agents,
         profile: args.profile,
         skills: args.skills,
         target: args.target,
+        gitignore: args.gitignore,
     });
 }
 
