@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.2] — 2026-03-05
+
+### Changed
+
+- `--help` now shows default values for `--skills`, `--profile`, `--gitignore`
+- README: "Configuration Profiles" renamed to "Enforcement Levels" — clarifies these are manual instruction snippets independent of `--profile` (which controls token budget)
+- README: reordered Quick Install examples — interactive mode is now listed second after `--all`
+
 ## [1.4.1] — 2026-03-05
 
 ### Added

@@ -28,10 +28,10 @@ function showUsage(): void {
     console.log(`  ${bold("Options:")}`);
     console.log(`    --all                Install for all agents + security skills`);
     console.log(`    --agent <list>       Comma-separated: copilot,codex,claude,antigravity`);
-    console.log(`    --skills             Also install security skills`);
-    console.log(`    --profile <name>     standard ${dim("(~3K tokens)")} or lite ${dim("(~1K tokens)")}`);
+    console.log(`    --skills             Also install security skills ${dim("(default: off)")}`);
+    console.log(`    --profile <name>     standard ${dim("(~3K tokens)")} or lite ${dim("(~1K tokens)")} ${dim("(default: standard)")}`);
     console.log(`    --target <dir>       Target project directory ${dim("(default: .)")}`);
-    console.log(`    --gitignore          Add installed files to .gitignore`);
+    console.log(`    --gitignore          Add installed files to .gitignore ${dim("(default: off)")}`);
     console.log(`    --list               Show available agents, profiles, and skills`);
     console.log(`    --version, -v        Show version`);
     console.log(`    --help, -h           Show this help`);

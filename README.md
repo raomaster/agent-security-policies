@@ -1,7 +1,7 @@
 # agent-security-policies
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.1-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.2-green.svg)](CHANGELOG.md)
 [![OWASP ASVS](https://img.shields.io/badge/OWASP_ASVS-5.0.0-orange.svg)](policies/owasp_asvs.yaml)
 [![CWE Top 25](https://img.shields.io/badge/CWE_Top_25-2025-red.svg)](policies/cwe_top25.yaml)
 
@@ -19,7 +19,7 @@
 - [Contents](#contents)
 - [Agent Security Skills](#-agent-security-skills-new-in-v13)
 - [Delivery Options](#delivery-options)
-- [Configuration Profiles](#configuration-profiles)
+- [Enforcement Levels](#enforcement-levels)
 - [Agent Setup](#agent-setup)
   - [GitHub Copilot](#github-copilot)
   - [Cursor](#cursor)
@@ -49,14 +49,14 @@ One command — zero dependencies. Copies `AGENT_RULES.md` + `policies/` + `skil
 # All agents + security skills
 npx agent-security-policies --all
 
+# Interactive mode — guided setup
+npx agent-security-policies
+
 # Specific agents only
 npx agent-security-policies --agent copilot,claude --skills
 
 # Local-only setup (files gitignored, each dev runs npx after clone)
 npx agent-security-policies --all --gitignore
-
-# Interactive mode — guided setup
-npx agent-security-policies
 
 # List available agents, profiles, and skills
 npx agent-security-policies --list
@@ -165,9 +165,9 @@ Skills chain together: `sast-scan` → `fix-findings`, `dependency-scan` → `fi
 
 ---
 
-## Configuration Profiles
+## Enforcement Levels
 
-Use one of these profiles depending on enforcement level:
+After installing, you can tune **how strictly** your agent enforces the rules by adding one of these snippets to your agent's instructions. This is independent of `--profile` (which controls file size / token budget).
 
 ### Minimal
 
@@ -176,7 +176,7 @@ Read and follow AGENT_RULES.md for secure coding basics.
 Use policies/base_policy.yaml as mandatory baseline.
 ```
 
-### Standard
+### Standard (default behavior — no extra instructions needed)
 
 ```
 Read and follow AGENT_RULES.md.
@@ -192,11 +192,7 @@ Block insecure patterns (hardcoded secrets, shell=True, unvalidated input).
 Require ASVS chapter-by-chapter audit with severity scoring before final output.
 ```
 
-### Lite (for local LLMs)
-
-```
-Read and follow AGENT_RULES_LITE.md for compact secure coding baseline.
-```
+> **Tip:** Enforcement levels work with any profile. For example, `--profile lite` + a Strict snippet gives you compact rules with maximum rigor.
 
 ---
 
