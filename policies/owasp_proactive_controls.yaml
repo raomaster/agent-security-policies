@@ -1,0 +1,259 @@
+# OWASP Top 10 Proactive Controls 2024
+
+version: "2024"
+source: "https://owasp.org/www-project-proactive-controls/"
+description: >
+  OWASP Top 10 Proactive Controls 2024 — Ten defensive programming techniques
+  every developer should implement to prevent the most common security vulnerabilities.
+  Unlike the OWASP Top 10 Risks (which list what to avoid), Proactive Controls define
+  what to BUILD INTO every application from the start.
+
+controls:
+  - id: C1
+    name: "Implement Access Control"
+    description: >
+      Access control (authorization) enforces that authenticated users can only perform
+      actions and access data they are permitted to. Every request must be verified
+      server-side. Deny by default.
+    techniques:
+      - "Design access control as a centralized component, not scattered per-feature"
+      - "Implement Role-Based Access Control (RBAC) or Attribute-Based Access Control (ABAC)"
+      - "Deny by default — explicitly grant, never assume permission"
+      - "Enforce server-side on EVERY request — never trust client-side enforcement"
+      - "Log all access control failures for audit and detection"
+      - "Validate ownership: ensure users can only access their own resources"
+      - "Implement Principle of Least Privilege — minimum access needed"
+      - "Test authorization with multiple user roles including edge cases"
+    prevent:
+      - "CWE-862: Missing Authorization"
+      - "CWE-863: Incorrect Authorization"
+      - "CWE-269: Improper Privilege Management"
+      - "IDOR — Insecure Direct Object References"
+    maps_to:
+      asvs: ["V8 — Authorization"]
+      agent_rules: ["Rule 4: Authentication & Authorization"]
+
+  - id: C2
+    name: "Use Cryptography the Right Way"
+    description: >
+      Use proven, modern cryptographic standards for data at rest and in transit.
+      Never implement custom cryptography. Manage keys as sensitive assets.
+    techniques:
+      - "Use only approved algorithms: AES-256-GCM, ChaCha20-Poly1305, Ed25519, X25519"
+      - "Use TLS 1.3 (minimum TLS 1.2) for all network communications"
+      - "Never use deprecated algorithms: MD5, SHA-1, DES, 3DES, RC4, ECB mode"
+      - "Use a cryptographically secure random number generator (CSPRNG)"
+      - "Implement key rotation and key lifecycle management"
+      - "Store passwords with adaptive hashing: Argon2id, bcrypt, scrypt (not SHA/MD5)"
+      - "Use envelope encryption for application-level secrets"
+      - "Validate TLS certificates — never disable certificate verification"
+    prevent:
+      - "CWE-327: Use of Broken or Risky Cryptographic Algorithm"
+      - "CWE-330: Use of Insufficiently Random Values"
+      - "CWE-326: Inadequate Encryption Strength"
+      - "CWE-798: Use of Hardcoded Credentials (key storage)"
+    maps_to:
+      asvs: ["V11 — Cryptography", "V12 — Secure Communication"]
+      agent_rules: ["Rule 6: Cryptography"]
+
+  - id: C3
+    name: "Validate All Input and Handle Exceptions"
+    description: >
+      Treat all input — from users, APIs, files, databases, environment — as untrusted.
+      Validate at every trust boundary. Handle all exceptions explicitly and safely.
+    techniques:
+      - "Validate type, length, format, range, and encoding of all inputs"
+      - "Use allowlists (whitelist) over denylists (blacklist)"
+      - "Validate at every trust boundary, not just the entry point"
+      - "Reject unexpected input — do not attempt to sanitize or normalize malicious input"
+      - "Use parameterized queries for all database operations"
+      - "Apply context-aware output encoding before rendering data (HTML, JS, SQL, XML)"
+      - "Handle ALL exceptions with typed exception hierarchies — never swallow errors"
+      - "Return generic error messages to users — never expose stack traces or internals"
+      - "Validate file uploads: type, size, content, and extension"
+    prevent:
+      - "CWE-20: Improper Input Validation"
+      - "CWE-79: Cross-Site Scripting (XSS)"
+      - "CWE-89: SQL Injection"
+      - "CWE-78: OS Command Injection"
+      - "CWE-611: XML External Entity (XXE)"
+      - "CWE-502: Deserialization of Untrusted Data"
+      - "CWE-22: Path Traversal"
+    maps_to:
+      asvs: ["V1 — Encoding and Sanitization", "V2 — Validation and Business Logic"]
+      agent_rules: ["Rule 1: Input Validation", "Rule 2: Injection Prevention"]
+
+  - id: C4
+    name: "Address Security From the Start"
+    description: >
+      Integrate security into the software design and architecture phase, not as an
+      afterthought. Apply threat modeling, secure design patterns, and defense in depth
+      before writing the first line of code.
+    techniques:
+      - "Threat model every new feature: use STRIDE (Spoofing, Tampering, Repudiation, Info Disclosure, DoS, Elevation)"
+      - "Apply defense in depth: multiple independent security controls at each layer"
+      - "Minimize attack surface: expose only what is strictly necessary"
+      - "Design for failure: assume components will be compromised; limit blast radius"
+      - "Apply Separation of Duties for critical operations"
+      - "Use security design patterns: Secure Factory, Proxy, Chain of Responsibility"
+      - "Document security assumptions and invariants in architecture decisions"
+      - "Review security architecture before implementation begins"
+    prevent:
+      - "Architectural flaws that cannot be fixed with code patches"
+      - "Over-privileged components that create unnecessary risk"
+      - "Missing security controls discovered too late (post-deployment)"
+    maps_to:
+      asvs: ["V15 — Secure Coding and Architecture"]
+      agent_rules: ["When You Plan (Architecture / Design)"]
+
+  - id: C5
+    name: "Secure By Default Configurations"
+    description: >
+      All systems, frameworks, and components must be deployed in their most secure
+      configuration state. Fail securely — when a system fails, it should default
+      to a more secure state, not a less secure one.
+    techniques:
+      - "Disable all features, ports, services, and accounts not required for the application"
+      - "Change all default credentials before deployment"
+      - "Apply security hardening baselines (CIS Benchmarks, STIG) to all infrastructure"
+      - "Use security headers: HSTS, CSP, X-Frame-Options, X-Content-Type-Options"
+      - "Set restrictive file and directory permissions (principle of least permission)"
+      - "Fail securely: on error, deny access — never grant access as a fallback"
+      - "Disable debug endpoints, verbose error messages, and admin interfaces in production"
+      - "Apply network segmentation: isolate components to minimize lateral movement"
+      - "Enforce secure defaults in frameworks and libraries (disable insecure features explicitly)"
+      - "Validate infrastructure-as-code configurations for security misconfigurations"
+    prevent:
+      - "CWE-16: Configuration"
+      - "CWE-732: Incorrect Permission Assignment"
+      - "Exposed admin interfaces and debug endpoints"
+      - "Default credentials compromising systems"
+    maps_to:
+      asvs: ["V13 — Configuration"]
+      agent_rules: ["Rule 7: Dependencies & Supply Chain"]
+
+  - id: C6
+    name: "Keep Components Secure"
+    description: >
+      Third-party libraries, frameworks, and dependencies are a primary attack vector.
+      Track all components, monitor for known vulnerabilities (CVEs), and maintain
+      an up-to-date dependency inventory.
+    techniques:
+      - "Maintain a Software Bill of Materials (SBOM) for all dependencies"
+      - "Pin dependency versions to exact or narrow ranges — no floating wildcards"
+      - "Scan for CVEs before adding a new dependency and in CI/CD pipelines"
+      - "Prefer libraries with active security response teams and clear disclosure policies"
+      - "Remove unused dependencies, dead code, and unnecessary features"
+      - "Monitor CVE databases (NVD, OSV, GitHub Advisory) and subscribe to security advisories"
+      - "Update dependencies regularly — especially security patches"
+      - "Verify integrity of downloaded packages (checksums, signatures)"
+    prevent:
+      - "CWE-1035: Using Components with Known Vulnerabilities"
+      - "Supply chain attacks via compromised dependencies"
+      - "Zero-day exploits in unpatched libraries"
+    maps_to:
+      asvs: ["V13 — Configuration"]
+      agent_rules: ["Rule 7: Dependencies & Supply Chain"]
+      slsa: "1.0"
+
+  - id: C7
+    name: "Secure Digital Identities"
+    description: >
+      Authentication verifies who a user is. It must resist brute force, credential
+      stuffing, and session hijacking. Modern applications should use proven identity
+      frameworks rather than custom authentication.
+    techniques:
+      - "Use proven authentication libraries and protocols (OAuth 2.0, OIDC, SAML)"
+      - "Enforce Multi-Factor Authentication (MFA) for all privileged and sensitive operations"
+      - "Implement secure session management: random IDs, secure cookies, rotation on login"
+      - "Invalidate sessions on logout and after timeout — both client and server side"
+      - "Implement rate limiting and account lockout to prevent brute force"
+      - "Use secure password storage: Argon2id with appropriate parameters"
+      - "Implement secure credential recovery flows — no security questions"
+      - "Validate JWT signatures, expiry, audience, and issuer on every request"
+      - "Use short-lived tokens — implement token refresh flows"
+      - "Protect against session fixation attacks"
+    prevent:
+      - "CWE-287: Improper Authentication"
+      - "CWE-306: Missing Authentication for Critical Function"
+      - "CWE-384: Session Fixation"
+      - "Credential stuffing and brute force attacks"
+    maps_to:
+      asvs: ["V6 — Authentication", "V7 — Session Management", "V9 — Self-contained Tokens", "V10 — OAuth and OIDC"]
+      agent_rules: ["Rule 4: Authentication & Authorization"]
+
+  - id: C8
+    name: "Leverage Browser Security Features"
+    description: >
+      Modern browsers provide built-in security mechanisms. Configure HTTP security
+      headers and use browser APIs correctly to protect web applications from
+      client-side attacks.
+    techniques:
+      - "Implement Content-Security-Policy (CSP) to prevent XSS and data injection"
+      - "Set HTTP Strict Transport Security (HSTS) to enforce HTTPS"
+      - "Use SameSite cookie attribute (Strict or Lax) to prevent CSRF"
+      - "Set HttpOnly flag on session cookies to prevent JavaScript access"
+      - "Set Secure flag on all cookies to prevent transmission over HTTP"
+      - "Configure CORS (Cross-Origin Resource Sharing) with strict allowlists"
+      - "Add X-Frame-Options or frame-ancestors CSP to prevent clickjacking"
+      - "Add X-Content-Type-Options: nosniff to prevent MIME sniffing"
+      - "Use Subresource Integrity (SRI) for external scripts and stylesheets"
+      - "Implement anti-CSRF tokens for all state-changing operations"
+    prevent:
+      - "CWE-79: Cross-Site Scripting (XSS)"
+      - "CWE-352: Cross-Site Request Forgery (CSRF)"
+      - "Clickjacking attacks"
+      - "Cross-origin data theft"
+    maps_to:
+      asvs: ["V3 — Web Frontend Security"]
+      agent_rules: ["Rule 2: Injection Prevention", "Rule 11: API Security"]
+
+  - id: C9
+    name: "Implement Security Logging and Monitoring"
+    description: >
+      Security events must be logged with sufficient detail to detect attacks, support
+      incident response, and enable forensic analysis. Logs must be tamper-evident
+      and must never contain sensitive data.
+    techniques:
+      - "Log all authentication events: successful logins, failures, logouts, MFA"
+      - "Log all authorization failures: denied access attempts"
+      - "Log all security-relevant events: privilege escalation, config changes, data exports"
+      - "Include in each log entry: timestamp (UTC), user/session ID, action, outcome, source IP"
+      - "Use structured logging format (JSON) for automated analysis"
+      - "Never log passwords, tokens, secrets, credit card numbers, or PII"
+      - "Store logs in append-only, tamper-evident storage — separate from application"
+      - "Implement real-time alerting for critical security events"
+      - "Retain logs for the period required by compliance (typically 90 days online, 1 year archived)"
+      - "Correlate events across services using distributed trace IDs"
+    prevent:
+      - "CWE-778: Insufficient Logging"
+      - "Undetected breaches and prolonged attacker dwell time"
+      - "Inability to reconstruct attack timeline"
+    maps_to:
+      asvs: ["V16 — Security Logging and Error Handling"]
+      nist: ["AU-3: Content of Audit Records"]
+      agent_rules: ["Rule 5: Error Handling & Logging"]
+
+  - id: C10
+    name: "Stop Server Side Request Forgery (SSRF)"
+    description: >
+      SSRF allows attackers to make the server issue requests to internal or external
+      resources the attacker cannot directly reach. Defend by validating and restricting
+      all server-initiated outbound requests.
+    techniques:
+      - "Validate and allowlist permitted URL schemes (https:// only in most cases)"
+      - "Resolve hostnames to IPs and validate against a blocklist of internal ranges"
+      - "Block requests to internal/private IP ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, 169.254.0.0/16"
+      - "Block requests to cloud metadata endpoints: 169.254.169.254 (AWS/GCP/Azure)"
+      - "Apply network-level controls: restrict outbound connections from application servers"
+      - "Use an allowlist of permitted external domains — deny by default"
+      - "Disable HTTP redirects that could bypass URL allowlists"
+      - "Log all outbound requests from the application"
+      - "Use separate network segments for components that must make outbound requests"
+    prevent:
+      - "CWE-918: Server-Side Request Forgery (SSRF)"
+      - "Access to internal services and cloud metadata APIs"
+      - "Exfiltration via DNS or HTTP callbacks"
+    maps_to:
+      asvs: ["V4 — API and Web Service"]
+      agent_rules: ["Rule 2: Injection Prevention — SSRF"]

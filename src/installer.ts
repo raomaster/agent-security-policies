@@ -1,15 +1,18 @@
 // src/installer.ts — Core installation logic (ported from install.sh)
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import * as readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import {
     SUPPORTED_AGENTS,
     SKILLS_LIST,
+    COMMANDS_LIST,
     POLICY_FILES,
     PROFILES,
     INSTRUCTIONS_BLOCK,
+    AEGIS_AGENT_CONTENT,
     getAgentById,
     type AgentConfig,
 } from "./agents.js";
@@ -27,6 +30,7 @@ export interface InstallOptions {
     skills: boolean;
     target: string;
     gitignore: boolean;
+    omo: boolean;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -61,6 +65,19 @@ function stripYamlFrontmatter(content: string): string {
 
     if (endIndex === -1) return content;
     return lines.slice(endIndex + 1).join("\n").trimStart();
+}
+
+// ─── oh-my-opencode detection ────────────────────────────────────────
+export function detectOhMyOpencode(): boolean {
+    const configPath = path.join(os.homedir(), ".config", "opencode", "opencode.json");
+    if (!fs.existsSync(configPath)) return false;
+    try {
+        const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+        const plugins: unknown[] = config.plugins ?? [];
+        return plugins.some((p) => typeof p === "string" && p.includes("oh-my-opencode"));
+    } catch {
+        return false;
+    }
 }
 
 // ─── Step 1: Core files ─────────────────────────────────────────────
@@ -214,6 +231,101 @@ function installSkills(targetDir: string, agentIds: string[]): void {
     }
 }
 
+// ─── Step 3b: Commands ───────────────────────────────────────────────
+function installCommands(targetDir: string, agentIds: string[]): void {
+    step("Installing security commands");
+
+    // Copy commands/ directory
+    const commandsDir = path.join(targetDir, "commands");
+    ensureDir(commandsDir);
+
+    for (const command of COMMANDS_LIST) {
+        const src = path.join(PACKAGE_ROOT, "commands", `${command.id}.md`);
+        const dest = path.join(commandsDir, `${command.id}.md`);
+        copyIfMissing(src, dest, `commands/${command.id}.md`);
+    }
+
+    // Install commands per agent format
+    for (const agentId of agentIds) {
+        const agent = getAgentById(agentId);
+        if (!agent) continue;
+
+        const format = agent.commandFormat;
+        if (format.type === "none") continue;
+
+        step(`Installing commands for ${agent.name}`);
+
+        for (const command of COMMANDS_LIST) {
+            const cmdSrc = path.join(targetDir, "commands", `${command.id}.md`);
+            if (!fs.existsSync(cmdSrc)) continue;
+
+            const cmdContent = fs.readFileSync(cmdSrc, "utf-8");
+
+            switch (format.type) {
+                case "copy": {
+                    const destPath = path.join(
+                        targetDir,
+                        format.destPattern.replace("{command}", command.id)
+                    );
+                    ensureDir(path.dirname(destPath));
+                    if (fs.existsSync(destPath)) {
+                        warn(`${format.destPattern.replace("{command}", command.id)} already exists — skipping`);
+                    } else {
+                        fs.copyFileSync(cmdSrc, destPath);
+                        ok(format.destPattern.replace("{command}", command.id));
+                    }
+                    break;
+                }
+
+                case "strip-frontmatter": {
+                    const destPath = path.join(
+                        targetDir,
+                        format.destPattern.replace("{command}", command.id)
+                    );
+                    ensureDir(path.dirname(destPath));
+                    if (fs.existsSync(destPath)) {
+                        warn(`${format.destPattern.replace("{command}", command.id)} already exists — skipping`);
+                    } else {
+                        const stripped = stripYamlFrontmatter(cmdContent);
+                        fs.writeFileSync(destPath, stripped, "utf-8");
+                        ok(format.destPattern.replace("{command}", command.id));
+                    }
+                    break;
+                }
+
+                case "append": {
+                    const destPath = path.join(targetDir, format.destFile);
+                    if (fs.existsSync(destPath)) {
+                        const existing = fs.readFileSync(destPath, "utf-8");
+                        if (existing.includes(`command:${command.id}`)) {
+                            warn(`${format.destFile} already contains ${command.id} — skipping`);
+                            continue;
+                        }
+                    }
+                    const stripped = stripYamlFrontmatter(cmdContent);
+                    const appendText = `\n\n<!-- command:${command.id} -->\n${stripped}`;
+                    fs.appendFileSync(destPath, appendText, "utf-8");
+                    ok(`${format.destFile} — appended ${command.id} command`);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// ─── Step 3c: Aegis agent ────────────────────────────────────────────
+function installAegisAgent(targetDir: string): void {
+    const agentsDir = path.join(targetDir, ".claude", "agents");
+    ensureDir(agentsDir);
+    const aegisPath = path.join(agentsDir, "aegis.md");
+    if (fs.existsSync(aegisPath)) {
+        warn(".claude/agents/aegis.md already exists — skipping");
+    } else {
+        fs.writeFileSync(aegisPath, AEGIS_AGENT_CONTENT, "utf-8");
+        ok(".claude/agents/aegis.md — Aegis security agent installed");
+    }
+}
+
 // ─── Step 4: .gitignore ─────────────────────────────────────────────
 const MARKER_START = "# >>> agent-security-policies >>>";
 const MARKER_END = "# <<< agent-security-policies <<<";
@@ -238,11 +350,19 @@ function updateGitignore(targetDir: string, opts: InstallOptions): void {
         const agent = getAgentById(agentId);
         if (!agent) continue;
         entries.push(agent.configPath);
+
+        // Extra paths (e.g. .claude/agents/ for opencode)
+        if (agent.extraPaths) {
+            for (const p of agent.extraPaths) {
+                entries.push(p);
+            }
+        }
     }
 
     // Skills
     if (opts.skills) {
         entries.push("skills/");
+        entries.push("commands/");
 
         // Collect unique skill directories per agent
         const skillDirs = new Set<string>();
@@ -260,6 +380,17 @@ function updateGitignore(targetDir: string, opts: InstallOptions): void {
                     break;
                 }
                 // "append" and "none" don't create separate skill directories
+            }
+
+            // Also collect command directories
+            const cmdFormat = agent.commandFormat;
+            switch (cmdFormat.type) {
+                case "copy":
+                case "strip-frontmatter": {
+                    const dir = path.dirname(cmdFormat.destPattern).replace(/\\/g, "/");
+                    skillDirs.add(dir + "/");
+                    break;
+                }
             }
         }
         for (const dir of skillDirs) {
@@ -352,6 +483,10 @@ function printSummary(opts: InstallOptions): void {
     info(`Profile: ${opts.profile}`);
     if (opts.skills) {
         info(`Skills installed: ${SKILLS_LIST.map((s) => s.id).join(", ")}`);
+        info(`Commands installed: ${COMMANDS_LIST.map((c) => c.id).join(", ")}`);
+    }
+    if (opts.omo && opts.agents.includes("opencode")) {
+        info("Aegis security agent installed (.claude/agents/aegis.md)");
     }
     if (opts.gitignore) {
         info("Installed files added to .gitignore");
@@ -369,6 +504,9 @@ function printSummary(opts: InstallOptions): void {
         console.log(
             "    4. Try a skill: ask your agent to run sast-scan or threat-model"
         );
+    }
+    if (opts.omo && opts.agents.includes("opencode")) {
+        console.log("    5. Delegate security tasks to Aegis: ask your agent to invoke Aegis");
     }
     console.log("");
     console.log("  Docs: github.com/raomaster/agent-security-policies");
@@ -418,6 +556,12 @@ export async function install(opts: InstallOptions): Promise<void> {
     // Step 3: Skills
     if (opts.skills) {
         installSkills(targetDir, opts.agents);
+        installCommands(targetDir, opts.agents);
+    }
+
+    // Step 3c: Aegis agent (OpenCode + --omo)
+    if (opts.omo && opts.agents.includes("opencode")) {
+        installAegisAgent(targetDir);
     }
 
     // Step 4: .gitignore

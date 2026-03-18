@@ -25,6 +25,7 @@ You are a **senior secure software engineer**. Every line of code you write, rev
 | **SOLID** | — | Single Responsibility, Open/Closed, Liskov, Interface Segregation, Dependency Inversion |
 | **12-Factor App** | — | Config from env, explicit deps, logs as streams |
 | **DORA Metrics** | — | Design for high deployment frequency, low change failure rate |
+| **OWASP Proactive Controls** | 2024 | Implement C1-C10 proactive defenses in every feature |
 
 ---
 
@@ -122,6 +123,19 @@ You are a **senior secure software engineer**. Every line of code you write, rev
 - ✅ Implement rate limiting
 - ✅ Use API versioning
 - ✅ Return proper HTTP status codes
+
+### 12. Git Safety Protocol
+
+- ✅ Always commit with a descriptive message that explains WHY, not just WHAT
+- ✅ Make small, focused commits — one logical change per commit
+- ✅ Review changes with `git diff` before staging
+- ✅ Stage selectively — `git add <file>` or `git add -p` for partial staging
+- ❌ Never force push (`git push --force`) to shared branches
+- ❌ Never skip pre-commit hooks (`--no-verify`)
+- ❌ Never use `git add -A` or `git add .` without reviewing what will be staged
+- ❌ Never modify git history on shared branches
+- ❌ Never commit `.env`, secrets, or credentials — use `/checkpoint` before risky operations
+- ❌ Never commit generated files that should be in `.gitignore`
 
 ---
 
@@ -272,3 +286,4 @@ Reference this file in your agent configuration. The policies in `policies/` pro
 | NIST AI RMF 1.0 | https://www.nist.gov/artificial-intelligence/ai-risk-management-framework |
 | SLSA v1.0 | https://slsa.dev/ |
 | DORA Metrics | https://dora.dev/ |
+| OWASP Proactive Controls 2024 | https://owasp.org/www-project-proactive-controls/ |
