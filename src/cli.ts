@@ -9,6 +9,7 @@ import { interactiveMode } from "./prompts.js";
 import {
     SUPPORTED_AGENTS,
     SKILLS_LIST,
+    COMMANDS_LIST,
     PROFILES,
     getAllAgentIds,
 } from "./agents.js";
@@ -27,11 +28,12 @@ function showUsage(): void {
     console.log(`  ${bold("Usage:")}  npx agent-security-policies [OPTIONS]\n`);
     console.log(`  ${bold("Options:")}`);
     console.log(`    --all                Install for all agents + security skills`);
-    console.log(`    --agent <list>       Comma-separated: copilot,codex,claude,antigravity`);
+    console.log(`    --agent <list>       Comma-separated: copilot,codex,claude,antigravity,opencode`);
     console.log(`    --skills             Also install security skills ${dim("(default: off)")}`);
     console.log(`    --profile <name>     standard ${dim("(~3K tokens)")} or lite ${dim("(~1K tokens)")} ${dim("(default: standard)")}`);
     console.log(`    --target <dir>       Target project directory ${dim("(default: .)")}`);
     console.log(`    --gitignore          Add installed files to .gitignore ${dim("(default: off)")}`);
+    console.log(`    --omo                Install Aegis security agent ${dim("(OpenCode + oh-my-opencode)")}`);
     console.log(`    --list               Show available agents, profiles, and skills`);
     console.log(`    --version, -v        Show version`);
     console.log(`    --help, -h           Show this help`);
@@ -39,6 +41,7 @@ function showUsage(): void {
     console.log(`  ${bold("Examples:")}`);
     console.log(`    npx agent-security-policies --all`);
     console.log(`    npx agent-security-policies --agent copilot,claude --skills`);
+    console.log(`    npx agent-security-policies --agent opencode --skills --omo`);
     console.log(`    npx agent-security-policies --agent codex --target ./my-project`);
     console.log(`    npx agent-security-policies --all --profile lite`);
     console.log("");
@@ -66,6 +69,13 @@ function showList(): void {
             `    ${cyan(s.id.padEnd(18))} ${s.tool} — ${s.description}`
         );
     }
+
+    console.log(`\n  ${bold("Security commands:")}\n`);
+    for (const c of COMMANDS_LIST) {
+        console.log(
+            `    ${cyan(c.id.padEnd(18))} ${c.description}`
+        );
+    }
     console.log("");
 }
 
@@ -77,6 +87,7 @@ interface ParsedArgs {
     profile: string;
     target: string;
     gitignore: boolean;
+    omo: boolean;
     help: boolean;
     version: boolean;
     list: boolean;
@@ -90,6 +101,7 @@ function parseArgs(argv: string[]): ParsedArgs {
         profile: "standard",
         target: ".",
         gitignore: false,
+        omo: false,
         help: false,
         version: false,
         list: false,
@@ -116,6 +128,9 @@ function parseArgs(argv: string[]): ParsedArgs {
                 break;
             case "--gitignore":
                 args.gitignore = true;
+                break;
+            case "--omo":
+                args.omo = true;
                 break;
             case "--profile":
                 i++;
@@ -185,6 +200,7 @@ async function main(): Promise<void> {
         args.profile = result.profile;
         args.skills = result.skills;
         args.gitignore = result.gitignore;
+        args.omo = result.omo;
     }
 
     if (args.agents.length === 0) {
@@ -201,6 +217,7 @@ async function main(): Promise<void> {
         skills: args.skills,
         target: args.target,
         gitignore: args.gitignore,
+        omo: args.omo,
     });
 }
 

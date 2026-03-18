@@ -2,6 +2,7 @@
 
 import * as readline from "node:readline";
 import { SUPPORTED_AGENTS, PROFILES, SKILLS_LIST } from "./agents.js";
+import { detectOhMyOpencode } from "./installer.js";
 import { bold, cyan, dim } from "./logger.js";
 
 interface InteractiveResult {
@@ -9,6 +10,7 @@ interface InteractiveResult {
     profile: string;
     skills: boolean;
     gitignore: boolean;
+    omo: boolean;
 }
 
 function createInterface(): readline.Interface {
@@ -109,8 +111,25 @@ export async function interactiveMode(): Promise<InteractiveResult> {
         const gitignore =
             gitignoreAnswer.toLowerCase() === "y" || gitignoreAnswer.toLowerCase() === "yes";
 
+        // ── Install Aegis? (only if opencode selected + oh-my-opencode detected) ──
+        let omo = false;
+        if (agents.includes("opencode")) {
+            const omoDetected = detectOhMyOpencode();
+            if (omoDetected) {
+                console.log(dim("\n  oh-my-opencode detected on this system."));
+                const omoAnswer = await ask(
+                    rl,
+                    `  Install Aegis security agent? ${dim("(Y/n)")}: `
+                );
+                omo =
+                    omoAnswer.toLowerCase() !== "n" && omoAnswer.toLowerCase() !== "no";
+            } else {
+                console.log(dim("\n  oh-my-opencode not detected — skipping Aegis (use --omo to override)."));
+            }
+        }
+
         console.log("");
-        return { agents, profile, skills, gitignore };
+        return { agents, profile, skills, gitignore, omo };
     } finally {
         rl.close();
     }

@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.0] — 2026-03-18
+
+### Added
+
+- OpenCode agent support (vanilla + oh-my-opencode enhanced mode via `--omo`)
+- Aegis security agent (`.claude/agents/aegis.md`) — specialized subagent with `mode: all`, installed when `--omo` is active
+- `skills/security-review/` — 8th skill, no Docker required, 3-phase methodology (static analysis → dependency check → secrets scan)
+- `commands/security-review.md` — user-invocable `/security-review` command
+- `commands/checkpoint.md` — create labeled git stash before risky operations
+- `commands/rollback.md` — revert to a named checkpoint
+- `policies/owasp_proactive_controls.yaml` — OWASP Proactive Controls 2024 (C1-C10)
+- Rule 12: Git Safety Protocol in `AGENT_RULES.md`
+- `--gitignore` support in `install.sh` and `install.ps1`
+- `--omo` / `-Omo` flag in CLI, `install.sh`, and `install.ps1`
+- `commandFormat` field in `AgentConfig` for per-agent command installation
+- `extraPaths` field in `AgentConfig` for additional `.gitignore` entries
+- `detectOhMyOpencode()` exported from `installer.ts`
+- `COMMANDS_LIST` exported from `agents.ts`
+- `opencode` keyword in `package.json`
+- `commands/` directory added to npm package `files` list
+
 ## [1.4.2] — 2026-03-05
 
 ### Changed

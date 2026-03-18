@@ -1,7 +1,7 @@
 # agent-security-policies
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.2-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.5.0-green.svg)](CHANGELOG.md)
 [![OWASP ASVS](https://img.shields.io/badge/OWASP_ASVS-5.0.0-orange.svg)](policies/owasp_asvs.yaml)
 [![CWE Top 25](https://img.shields.io/badge/CWE_Top_25-2025-red.svg)](policies/cwe_top25.yaml)
 
@@ -18,6 +18,7 @@
 - [Quick Install](#quick-install)
 - [Contents](#contents)
 - [Agent Security Skills](#-agent-security-skills-new-in-v13)
+- [Agent Security Commands](#agent-security-commands)
 - [Delivery Options](#delivery-options)
 - [Enforcement Levels](#enforcement-levels)
 - [Agent Setup](#agent-setup)
@@ -30,7 +31,8 @@
   - [Cline / Roo Code](#cline--roo-code-vs-code)
   - [Aider](#aider)
   - [Continue.dev](#continuedev)
-  - [OpenCode / PEA Engine](#opencode--pea-engine)
+  - [OpenCode](#opencode)
+  - [Aegis Security Agent](#aegis-security-agent)
 - [Monorepo Configuration](#monorepo-configuration)
 - [CI Enforcement](#ci-enforcement-recommended)
 - [Standards Covered](#standards-covered)
@@ -54,6 +56,9 @@ npx agent-security-policies
 
 # Specific agents only
 npx agent-security-policies --agent copilot,claude --skills
+
+# OpenCode with oh-my-opencode (installs Aegis agent + commands)
+npx agent-security-policies --agent opencode --skills --omo
 
 # Local-only setup (files gitignored, each dev runs npx after clone)
 npx agent-security-policies --all --gitignore
@@ -101,6 +106,7 @@ cd agent-security-policies
 | Codex CLI | `AGENTS.md` | Codex CLI (OpenAI) |
 | Claude CLI | `CLAUDE.md` | Claude Code (Anthropic) |
 | Antigravity | `.agent/rules/security.md` | Gemini (Google) |
+| OpenCode | `.claude/rules/security.md` | oh-my-opencode |
 
 All files reference `AGENT_RULES.md` with key rules inline. Non-destructive — existing files are never overwritten; security rules are appended with your confirmation.
 
@@ -117,16 +123,22 @@ All files reference `AGENT_RULES.md` with key rules inline. Non-destructive — 
 │   ├── base_policy.yaml        ← 11 security domains (always active)
 │   ├── owasp_asvs.yaml         ← ASVS 5.0.0 checklist (V1-V17)
 │   ├── owasp_masvs.yaml        ← MASVS 2.1.0 controls (mobile only)
+│   ├── owasp_proactive_controls.yaml ← Proactive Controls 2024 (C1-C10)
 │   ├── cwe_top25.yaml          ← 25 CWE/SANS 2025 prevention rules
 │   └── llm_security.yaml       ← OWASP LLM Top 10 2025 controls
-└── skills/                     ← 🚀 Executable Agent Security Skills
-    ├── sast-scan/              ← Code vulnerabilities via Semgrep
-    ├── secrets-scan/           ← Hardcoded credentials via Gitleaks
-    ├── dependency-scan/        ← Known CVEs via Trivy
-    ├── container-scan/         ← Container image scanning via Trivy
-    ├── iac-scan/               ← Infrastructure as Code via Trivy
-    ├── threat-model/           ← STRIDE threat modeling
-    └── fix-findings/           ← Automated remediation from scan outputs
+├── skills/                     ← 🚀 Executable Agent Security Skills
+│   ├── sast-scan/              ← Code vulnerabilities via Semgrep
+│   ├── secrets-scan/           ← Hardcoded credentials via Gitleaks
+│   ├── dependency-scan/        ← Known CVEs via Trivy
+│   ├── container-scan/         ← Container image scanning via Trivy
+│   ├── iac-scan/               ← Infrastructure as Code via Trivy
+│   ├── threat-model/           ← STRIDE threat modeling
+│   ├── fix-findings/           ← Automated remediation from scan outputs
+│   └── security-review/        ← Multi-phase code review (no Docker)
+└── commands/                   ← 💬 User-invocable Agent Commands
+    ├── security-review.md      ← /security-review — full security audit
+    ├── checkpoint.md           ← /checkpoint — git stash before risky ops
+    └── rollback.md             ← /rollback — revert to a named checkpoint
 ```
 
 ---
@@ -144,10 +156,29 @@ All files reference `AGENT_RULES.md` with key rules inline. Non-destructive — 
 | `iac-scan` | Trivy | Terraform / Helm / K8s issues (JSON) |
 | `threat-model` | Agent | STRIDE threat model (Markdown) |
 | `fix-findings` | Agent | Automated fixes from any scan output |
+| `security-review` | Agent | Multi-phase code review, no Docker required |
 
 Skills chain together: `sast-scan` → `fix-findings`, `dependency-scan` → `fix-findings`.
 
 > Want your agent to learn a new trick? See the [Skills Design and Creation Guide](skills/README.md).
+
+---
+
+## Agent Security Commands
+
+`agent-security-policies` ships with **3 user-invocable commands** that you can trigger directly in your agent session. Installed to `.opencode/command/` (oh-my-opencode) or the agent-specific commands directory.
+
+| Command | Invocation | Description |
+|---------|-----------|-------------|
+| `security-review` | `/security-review` | Full 3-phase security audit: static analysis → dependency check → secrets scan |
+| `checkpoint` | `/checkpoint [label]` | Create a labeled git stash before risky operations |
+| `rollback` | `/rollback [label]` | Revert to a named checkpoint created by `/checkpoint` |
+
+Install commands with:
+
+```bash
+npx agent-security-policies --agent opencode --skills --omo
+```
 
 ---
 
@@ -431,9 +462,53 @@ Edit `.continue/config.json`:
 
 ---
 
-### OpenCode / PEA Engine
+### OpenCode
 
-Already integrated — policies are loaded from `policies/` automatically and injected into Planner, Executor, and Auditor prompts. No configuration needed.
+OpenCode reads rules from `.claude/rules/` automatically via oh-my-opencode.
+
+#### Vanilla mode (without oh-my-opencode)
+
+Place `AGENT_RULES.md` at project root. OpenCode will pick it up if you reference it in your session.
+
+#### With oh-my-opencode (recommended)
+
+oh-my-opencode discovers rules, skills, and commands from standard directories:
+
+```bash
+# Install rules + skills + Aegis agent + commands
+npx agent-security-policies --agent opencode --skills --omo
+
+# Or with gitignore support
+npx agent-security-policies --agent opencode --skills --omo --gitignore
+```
+
+This creates:
+- `.claude/rules/security.md` — auto-loaded security rules
+- `.opencode/skills/security-review/SKILL.md` — security-review skill
+- `.opencode/command/security-review.md` — `/security-review` command
+- `.opencode/command/checkpoint.md` — `/checkpoint` command
+- `.opencode/command/rollback.md` — `/rollback` command
+- `.claude/agents/aegis.md` — Aegis security subagent (see below)
+
+---
+
+### Aegis Security Agent
+
+**Aegis** is a specialized security subagent installed to `.claude/agents/aegis.md` when using OpenCode with oh-my-opencode (`--omo`).
+
+Aegis is activated automatically (`mode: all`) on every task — it shadows the main agent and enforces security constraints proactively, rather than reactively. It operates with:
+
+- Full OWASP ASVS 5.0.0 + Proactive Controls 2024 enforcement
+- CWE/SANS Top 25 2025 prevention
+- Git Safety Protocol (Rule 12)
+- Authority to block insecure patterns before they reach the codebase
+
+```bash
+# Install Aegis
+npx agent-security-policies --agent opencode --omo
+```
+
+Aegis is installed once per project. It is non-destructive — if `.claude/agents/aegis.md` already exists, the installer skips it.
 
 ---
 
@@ -504,6 +579,7 @@ jobs:
 | OWASP ASVS | 5.0.0 | Full — policy YAML + V1-V17 audit checklist |
 | OWASP MASVS (mobile) | 2.1.0 | Full — policy YAML, 8 mobile security categories |
 | OWASP Top 10 LLM | 2025 | Full — policy YAML, LLM01-LLM10 risks |
+| OWASP Proactive Controls | 2024 | Full — policy YAML, C1-C10 proactive defenses |
 | CWE/SANS Top 25 | 2025 | Full — policy YAML + all 25 weaknesses with prevention |
 | NIST SP 800-218 (SSDF) | 1.1 | Rules — practices mapped to ASVS/CWE across rules 1-11 |
 | NIST SP 800-53 | Rev 5 | Rules — AU-3 (logging), SI (integrity), SC (crypto), SA-12 (supply chain) |

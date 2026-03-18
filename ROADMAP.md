@@ -82,11 +82,24 @@ Agents auto-configured:
 | Non-destructive: skips existing files | ✅ |
 | Zero runtime dependencies (Node.js built-ins only) | ✅ |
 
+### v1.5 — OpenCode Support ✅
+
+| Deliverable | Status |
+|-------------|--------|
+| OpenCode agent (vanilla + oh-my-opencode enhanced mode via `--omo`) | ✅ |
+| Aegis security agent (`.claude/agents/aegis.md`) | ✅ |
+| `skills/security-review/` — 8th skill (no Docker) | ✅ |
+| `commands/` — security-review, checkpoint, rollback | ✅ |
+| `policies/owasp_proactive_controls.yaml` — OWASP Proactive Controls 2024 (C1-C10) | ✅ |
+| Rule 12: Git Safety Protocol in `AGENT_RULES.md` | ✅ |
+| `--gitignore` flag in `install.sh` / `install.ps1` | ✅ |
+| `--omo` / `-Omo` flag for Aegis installation | ✅ |
+
 ---
 
 ## Next Up
 
-### v1.5 — GitHub Pages + Community
+### v1.6 — GitHub Pages + Community
 
 > **Goal:** Make the project visible, accessible, and shareable. A polished website is the face of the project.
 
@@ -122,7 +135,7 @@ Agents auto-configured:
 
 ---
 
-### v1.6 — More Agents + Optional Skills
+### v1.7 — More Agents + Optional Skills
 
 > **Goal:** Expand agent support and add optional quality/testing skills.
 
@@ -160,7 +173,7 @@ unit-test (coverage) ──→ quality-scan (SonarQube) ──→ fix-findings
 
 ---
 
-### v1.7 — Agent Governance
+### v1.8 — Agent Governance
 
 > **Goal:** Define HOW agents should behave, not just WHAT code to produce. Inspired by `Baneeishaque/ai-agent-rules`.
 
@@ -180,7 +193,7 @@ unit-test (coverage) ──→ quality-scan (SonarQube) ──→ fix-findings
 
 ---
 
-### v1.8 — Advanced Security Policies
+### v1.9 — Advanced Security Policies
 
 > **Goal:** Cover emerging threats and infrastructure security.
 
