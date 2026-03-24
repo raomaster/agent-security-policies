@@ -2,7 +2,7 @@
 
 import * as readline from "node:readline";
 import { SUPPORTED_AGENTS, PROFILES, SKILLS_LIST } from "./agents.js";
-import { detectOhMyOpencode } from "./installer.js";
+import { detectOhMyOpenagent } from "./installer.js";
 import { bold, cyan, dim } from "./logger.js";
 
 interface InteractiveResult {
@@ -11,6 +11,7 @@ interface InteractiveResult {
     skills: boolean;
     gitignore: boolean;
     omo: boolean;
+    aegis: boolean;
 }
 
 function createInterface(): readline.Interface {
@@ -111,25 +112,38 @@ export async function interactiveMode(): Promise<InteractiveResult> {
         const gitignore =
             gitignoreAnswer.toLowerCase() === "y" || gitignoreAnswer.toLowerCase() === "yes";
 
-        // ── Install Aegis? (only if opencode selected + oh-my-opencode detected) ──
+        // ── Install Aegis? (OpenCode + oh-my-openagent) ──
         let omo = false;
         if (agents.includes("opencode")) {
-            const omoDetected = detectOhMyOpencode();
+            const omoDetected = detectOhMyOpenagent();
             if (omoDetected) {
-                console.log(dim("\n  oh-my-opencode detected on this system."));
+                console.log(dim("\n  oh-my-openagent detected on this system."));
                 const omoAnswer = await ask(
                     rl,
-                    `  Install Aegis security agent? ${dim("(Y/n)")}: `
+                    `  Install Aegis security agent for OpenCode (mode: all)? ${dim("(Y/n)")}: `
                 );
                 omo =
                     omoAnswer.toLowerCase() !== "n" && omoAnswer.toLowerCase() !== "no";
             } else {
-                console.log(dim("\n  oh-my-opencode not detected — skipping Aegis (use --omo to override)."));
+                console.log(dim("\n  oh-my-openagent not detected — skipping Aegis for OpenCode (use --omo to override)."));
             }
         }
 
+        // ── Install Aegis for Claude Code? ──
+        let aegis = false;
+        if (agents.includes("claude")) {
+            console.log(dim("\n  Claude Code supports Aegis as a subagent (.claude/agents/aegis.md)."));
+            console.log(dim("  Aegis auto-delegates security tasks. Run `claude --agent aegis` for full-session coverage."));
+            const aegisAnswer = await ask(
+                rl,
+                `  Install Aegis security agent for Claude Code? ${dim("(y/N)")}: `
+            );
+            aegis =
+                aegisAnswer.toLowerCase() === "y" || aegisAnswer.toLowerCase() === "yes";
+        }
+
         console.log("");
-        return { agents, profile, skills, gitignore, omo };
+        return { agents, profile, skills, gitignore, omo, aegis };
     } finally {
         rl.close();
     }

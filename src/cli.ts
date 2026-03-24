@@ -23,7 +23,7 @@ const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
 const VERSION: string = pkg.version;
 
 // ─── Usage ──────────────────────────────────────────────────────────
-function showUsage(): void {
+export function showUsage(): void {
     banner();
     console.log(`  ${bold("Usage:")}  npx agent-security-policies [OPTIONS]\n`);
     console.log(`  ${bold("Options:")}`);
@@ -33,7 +33,8 @@ function showUsage(): void {
     console.log(`    --profile <name>     standard ${dim("(~3K tokens)")} or lite ${dim("(~1K tokens)")} ${dim("(default: standard)")}`);
     console.log(`    --target <dir>       Target project directory ${dim("(default: .)")}`);
     console.log(`    --gitignore          Add installed files to .gitignore ${dim("(default: off)")}`);
-    console.log(`    --omo                Install Aegis security agent ${dim("(OpenCode + oh-my-opencode)")}`);
+    console.log(`    --omo                Install Aegis security agent ${dim("(OpenCode + oh-my-openagent, mode: all)")}`);
+    console.log(`    --aegis              Install Aegis security agent ${dim("(any agent — on-demand delegation)")}`);
     console.log(`    --list               Show available agents, profiles, and skills`);
     console.log(`    --version, -v        Show version`);
     console.log(`    --help, -h           Show this help`);
@@ -42,13 +43,14 @@ function showUsage(): void {
     console.log(`    npx agent-security-policies --all`);
     console.log(`    npx agent-security-policies --agent copilot,claude --skills`);
     console.log(`    npx agent-security-policies --agent opencode --skills --omo`);
+    console.log(`    npx agent-security-policies --agent claude --skills --aegis`);
     console.log(`    npx agent-security-policies --agent codex --target ./my-project`);
     console.log(`    npx agent-security-policies --all --profile lite`);
     console.log("");
 }
 
 // ─── List ───────────────────────────────────────────────────────────
-function showList(): void {
+export function showList(): void {
     banner();
 
     console.log(`  ${bold("Supported agents:")}\n`);
@@ -88,12 +90,13 @@ interface ParsedArgs {
     target: string;
     gitignore: boolean;
     omo: boolean;
+    aegis: boolean;
     help: boolean;
     version: boolean;
     list: boolean;
 }
 
-function parseArgs(argv: string[]): ParsedArgs {
+export function parseArgs(argv: string[]): ParsedArgs {
     const args: ParsedArgs = {
         all: false,
         agents: [],
@@ -102,6 +105,7 @@ function parseArgs(argv: string[]): ParsedArgs {
         target: ".",
         gitignore: false,
         omo: false,
+        aegis: false,
         help: false,
         version: false,
         list: false,
@@ -131,6 +135,9 @@ function parseArgs(argv: string[]): ParsedArgs {
                 break;
             case "--omo":
                 args.omo = true;
+                break;
+            case "--aegis":
+                args.aegis = true;
                 break;
             case "--profile":
                 i++;
@@ -201,6 +208,7 @@ async function main(): Promise<void> {
         args.skills = result.skills;
         args.gitignore = result.gitignore;
         args.omo = result.omo;
+        args.aegis = result.aegis ?? false;
     }
 
     if (args.agents.length === 0) {
@@ -218,6 +226,7 @@ async function main(): Promise<void> {
         target: args.target,
         gitignore: args.gitignore,
         omo: args.omo,
+        aegis: args.aegis,
     });
 }
 

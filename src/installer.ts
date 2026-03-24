@@ -31,6 +31,7 @@ export interface InstallOptions {
     target: string;
     gitignore: boolean;
     omo: boolean;
+    aegis: boolean;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ function copyIfMissing(src: string, dest: string, label: string): boolean {
     return true;
 }
 
-function stripYamlFrontmatter(content: string): string {
+export function stripYamlFrontmatter(content: string): string {
     const lines = content.split("\n");
     if (lines[0]?.trim() !== "---") return content;
 
@@ -67,18 +68,109 @@ function stripYamlFrontmatter(content: string): string {
     return lines.slice(endIndex + 1).join("\n").trimStart();
 }
 
-// ─── oh-my-opencode detection ────────────────────────────────────────
-export function detectOhMyOpencode(): boolean {
-    const configPath = path.join(os.homedir(), ".config", "opencode", "opencode.json");
-    if (!fs.existsSync(configPath)) return false;
-    try {
-        const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-        const plugins: unknown[] = config.plugins ?? [];
-        return plugins.some((p) => typeof p === "string" && p.includes("oh-my-opencode"));
-    } catch {
-        return false;
+// ─── JSONC support (strip comments before JSON.parse) ───────────────
+export function stripJsonComments(text: string): string {
+    let result = "";
+    let inString = false;
+    let escape = false;
+    let i = 0;
+
+    while (i < text.length) {
+        const ch = text[i];
+
+        if (escape) {
+            result += ch;
+            escape = false;
+            i++;
+            continue;
+        }
+
+        if (inString) {
+            if (ch === "\\") escape = true;
+            else if (ch === '"') inString = false;
+            result += ch;
+            i++;
+            continue;
+        }
+
+        // Line comment
+        if (ch === "/" && text[i + 1] === "/") {
+            while (i < text.length && text[i] !== "\n") i++;
+            continue;
+        }
+
+        // Block comment
+        if (ch === "/" && text[i + 1] === "*") {
+            i += 2;
+            while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i++;
+            i += 2; // skip */
+            continue;
+        }
+
+        if (ch === '"') inString = true;
+        result += ch;
+        i++;
     }
+
+    return result;
 }
+
+// ─── oh-my-openagent detection ──────────────────────────────────────
+
+/**
+ * Build the list of config file paths to probe.
+ * Accepts an optional homeDir override for testing.
+ */
+export function getOmoConfigPaths(homeDir?: string): string[] {
+    const home = homeDir ?? os.homedir();
+    return [
+        // New name after project rename
+        path.join(home, ".config", "opencode", "oh-my-openagent.jsonc"),
+        path.join(home, ".config", "opencode", "oh-my-openagent.json"),
+        // Legacy names (before rename)
+        path.join(home, ".config", "opencode", "oh-my-opencode.jsonc"),
+        path.join(home, ".config", "opencode", "oh-my-opencode.json"),
+        // opencode.json / opencode.jsonc — plugin can be declared here too
+        path.join(home, ".config", "opencode", "opencode.jsonc"),
+        path.join(home, ".config", "opencode", "opencode.json"),
+    ];
+}
+
+/**
+ * Detect whether oh-my-openagent (or legacy oh-my-opencode) is installed.
+ * Checks JSONC and JSON config files in standard locations.
+ * @param homeDir — override home directory (for testing)
+ */
+export function detectOhMyOpenagent(homeDir?: string): boolean {
+    const configPaths = getOmoConfigPaths(homeDir);
+
+    for (const configPath of configPaths) {
+        if (!fs.existsSync(configPath)) continue;
+        try {
+            const raw = fs.readFileSync(configPath, "utf-8");
+            // Strip comments AND trailing commas (valid JSONC, invalid JSON)
+            const cleaned = stripJsonComments(raw).replace(/,(\s*[}\]])/g, "$1");
+            const config = JSON.parse(cleaned);
+            const plugins: unknown[] = config.plugin ?? config.plugins ?? [];
+            const found = plugins.some(
+                (p) =>
+                    typeof p === "string" &&
+                    (p.includes("oh-my-openagent") || p.includes("oh-my-opencode"))
+            );
+            // Only return true on a positive match — keep searching other
+            // files if this one exists but has no plugin entry (e.g. an
+            // oh-my-openagent settings file that doesn't list plugins, while
+            // the plugin declaration lives in opencode.json)
+            if (found) return true;
+        } catch {
+            continue;
+        }
+    }
+    return false;
+}
+
+/** @deprecated Use detectOhMyOpenagent() instead */
+export const detectOhMyOpencode = detectOhMyOpenagent;
 
 // ─── Step 1: Core files ─────────────────────────────────────────────
 function installCoreFiles(targetDir: string, profile: string): void {
@@ -314,15 +406,23 @@ function installCommands(targetDir: string, agentIds: string[]): void {
 }
 
 // ─── Step 3c: Aegis agent ────────────────────────────────────────────
-function installAegisAgent(targetDir: string): void {
-    const agentsDir = path.join(targetDir, ".claude", "agents");
+// OpenCode discovers agents from .opencode/agents/ (per-project)
+// or ~/.config/opencode/agents/ (global). NOT from .claude/agents/.
+// Claude Code discovers agents from .claude/agents/ (per-project).
+function installAegisAgent(targetDir: string, agentId: "opencode" | "claude" = "opencode"): void {
+    const agentsDir = agentId === "claude"
+        ? path.join(targetDir, ".claude", "agents")
+        : path.join(targetDir, ".opencode", "agents");
+    const relPath = agentId === "claude"
+        ? ".claude/agents/aegis.md"
+        : ".opencode/agents/aegis.md";
     ensureDir(agentsDir);
     const aegisPath = path.join(agentsDir, "aegis.md");
     if (fs.existsSync(aegisPath)) {
-        warn(".claude/agents/aegis.md already exists — skipping");
+        warn(`${relPath} already exists — skipping`);
     } else {
         fs.writeFileSync(aegisPath, AEGIS_AGENT_CONTENT, "utf-8");
-        ok(".claude/agents/aegis.md — Aegis security agent installed");
+        ok(`${relPath} — Aegis security agent installed`);
     }
 }
 
@@ -351,7 +451,7 @@ function updateGitignore(targetDir: string, opts: InstallOptions): void {
         if (!agent) continue;
         entries.push(agent.configPath);
 
-        // Extra paths (e.g. .claude/agents/ for opencode)
+        // Extra paths (e.g. .opencode/agents/ for opencode)
         if (agent.extraPaths) {
             for (const p of agent.extraPaths) {
                 entries.push(p);
@@ -486,7 +586,15 @@ function printSummary(opts: InstallOptions): void {
         info(`Commands installed: ${COMMANDS_LIST.map((c) => c.id).join(", ")}`);
     }
     if (opts.omo && opts.agents.includes("opencode")) {
-        info("Aegis security agent installed (.claude/agents/aegis.md)");
+        info("Aegis security agent installed (.opencode/agents/aegis.md)");
+    }
+    if (opts.aegis) {
+        if (opts.agents.includes("claude")) {
+            info("Aegis security agent installed (.claude/agents/aegis.md)");
+        }
+        if (opts.agents.includes("opencode") && !opts.omo) {
+            info("Aegis security agent installed (.opencode/agents/aegis.md)");
+        }
     }
     if (opts.gitignore) {
         info("Installed files added to .gitignore");
@@ -507,6 +615,9 @@ function printSummary(opts: InstallOptions): void {
     }
     if (opts.omo && opts.agents.includes("opencode")) {
         console.log("    5. Delegate security tasks to Aegis: ask your agent to invoke Aegis");
+    }
+    if (opts.aegis && opts.agents.includes("claude")) {
+        console.log("    5. Use Aegis: run `claude --agent aegis` for full-session security coverage");
     }
     console.log("");
     console.log("  Docs: github.com/raomaster/agent-security-policies");
@@ -559,9 +670,19 @@ export async function install(opts: InstallOptions): Promise<void> {
         installCommands(targetDir, opts.agents);
     }
 
-    // Step 3c: Aegis agent (OpenCode + --omo)
+    // Step 3c: Aegis agent
+    // --omo = OpenCode + oh-my-openagent (mode: all, per-project)
     if (opts.omo && opts.agents.includes("opencode")) {
-        installAegisAgent(targetDir);
+        installAegisAgent(targetDir, "opencode");
+    }
+    // --aegis = install Aegis for each selected agent that supports it
+    if (opts.aegis) {
+        if (opts.agents.includes("claude")) {
+            installAegisAgent(targetDir, "claude");
+        }
+        if (opts.agents.includes("opencode") && !opts.omo) {
+            installAegisAgent(targetDir, "opencode");
+        }
     }
 
     // Step 4: .gitignore
