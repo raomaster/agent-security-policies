@@ -274,6 +274,7 @@ describe("interactiveMode — full result shapes", () => {
             skills: true,
             gitignore: true,
             omo: true,
+            aegis: false,
         });
     });
 

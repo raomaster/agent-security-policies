@@ -22,6 +22,7 @@ describe("parseArgs — defaults", () => {
             target: ".",
             gitignore: false,
             omo: false,
+            aegis: false,
             help: false,
             version: false,
             list: false,
@@ -64,6 +65,14 @@ describe("parseArgs — flags", () => {
 
     it("-v sets version:true", () => {
         expect(parseArgs(["-v"]).version).toBe(true);
+    });
+
+    it("--omo sets omo:true", () => {
+        expect(parseArgs(["--omo"]).omo).toBe(true);
+    });
+
+    it("--aegis sets aegis:true", () => {
+        expect(parseArgs(["--aegis"]).aegis).toBe(true);
     });
 });
 

@@ -461,6 +461,71 @@ describe("install() — opencode with omo (Aegis discipline agent)", () => {
     });
 });
 
+describe("install() — claude agent with --aegis (Claude Code subagent)", () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "asp-aegis-claude-"));
+        await install({
+            agents: ["claude"],
+            profile: "standard",
+            skills: false,
+            target: tmpDir,
+            gitignore: false,
+            omo: false,
+            aegis: true,
+        });
+    });
+    afterEach(() => {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it("creates .claude/agents/aegis.md", () => {
+        expect(
+            fs.existsSync(path.join(tmpDir, ".claude", "agents", "aegis.md"))
+        ).toBe(true);
+    });
+
+    it("aegis.md content matches AEGIS_AGENT_CONTENT", () => {
+        const written = fs.readFileSync(
+            path.join(tmpDir, ".claude", "agents", "aegis.md"),
+            "utf-8"
+        );
+        expect(written).toBe(AEGIS_AGENT_CONTENT);
+    });
+
+    it("does NOT create .opencode/agents/aegis.md for claude agent", () => {
+        expect(
+            fs.existsSync(path.join(tmpDir, ".opencode", "agents", "aegis.md"))
+        ).toBe(false);
+    });
+
+    it("--aegis without claude does NOT create .claude/agents/aegis.md", async () => {
+        const tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), "asp-aegis-none-"));
+        try {
+            await install({
+                agents: ["opencode"],
+                profile: "standard",
+                skills: false,
+                target: tmp2,
+                gitignore: false,
+                omo: false,
+                aegis: true,
+            });
+            // opencode + aegis (no omo) → .opencode/agents/aegis.md
+            expect(
+                fs.existsSync(path.join(tmp2, ".opencode", "agents", "aegis.md"))
+            ).toBe(true);
+            // .claude/agents/aegis.md NOT created
+            expect(
+                fs.existsSync(path.join(tmp2, ".claude", "agents", "aegis.md"))
+            ).toBe(false);
+        } finally {
+            fs.rmSync(tmp2, { recursive: true, force: true });
+        }
+    });
+});
+
 describe("install() — gitignore management", () => {
     let tmpDir: string;
 

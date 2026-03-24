@@ -26,6 +26,9 @@
   - [Cursor](#cursor)
   - [Windsurf](#windsurf)
   - [Claude (Anthropic)](#claude-anthropic)
+    - [Via Claude Code CLI](#via-claude-code-cli)
+    - [Via claude.ai Projects](#via-claudeai-projects)
+    - [Via API](#via-api-1)
   - [ChatGPT / GPT API](#chatgpt--gpt-api)
   - [Gemini / Antigravity](#gemini-code-assist--antigravity)
   - [Cline / Roo Code](#cline--roo-code-vs-code)
@@ -59,6 +62,9 @@ npx agent-security-policies --agent copilot,claude --skills
 
 # OpenCode with oh-my-openagent (installs Aegis agent + commands)
 npx agent-security-policies --agent opencode --skills --omo
+
+# Claude Code with Aegis subagent (installs CLAUDE.md + commands + .claude/agents/aegis.md)
+npx agent-security-policies --agent claude --skills --aegis
 
 # Local-only setup (files gitignored, each dev runs npx after clone)
 npx agent-security-policies --all --gitignore
@@ -104,9 +110,11 @@ cd agent-security-policies
 |-------|-------------|------------------|
 | GitHub Copilot | `.github/copilot-instructions.md` | VS Code + JetBrains |
 | Codex CLI | `AGENTS.md` | Codex CLI (OpenAI) |
-| Claude CLI | `CLAUDE.md` | Claude Code (Anthropic) |
+| Claude Code | `CLAUDE.md` | Claude Code (Anthropic) |
+| Claude Code + Aegis | `CLAUDE.md` + `.claude/agents/aegis.md` | Claude Code — auto-delegates security tasks |
 | Antigravity | `.agent/rules/security.md` | Gemini (Google) |
 | OpenCode | `.claude/rules/security.md` | oh-my-openagent |
+| OpenCode + Aegis | `.claude/rules/security.md` + `.opencode/agents/aegis.md` | oh-my-openagent — `mode: all` |
 
 All files reference `AGENT_RULES.md` with key rules inline. Non-destructive — existing files are never overwritten; security rules are appended with your confirmation.
 
@@ -359,6 +367,55 @@ to all output. Never skip security controls.
 
 ### Claude (Anthropic)
 
+#### Via Claude Code CLI
+
+Claude Code reads `CLAUDE.md` automatically from the project root and loads `.claude/commands/` as slash commands. Install the full stack:
+
+```bash
+# Rules + security skills + slash commands
+npx agent-security-policies --agent claude --skills
+```
+
+This creates:
+- `CLAUDE.md` — security policy loaded on every session (passive baseline)
+- `.claude/commands/security-review.md` — `/security-review` slash command
+- `.claude/commands/checkpoint.md` — `/checkpoint` slash command
+- `.claude/commands/rollback.md` — `/rollback` slash command
+
+##### Do you need Aegis as a Claude Code subagent?
+
+Claude Code supports custom subagents via `.claude/agents/`. The security stack works in three layers — you can use any combination:
+
+| Layer | File | Activation | What it gives you |
+|-------|------|-----------|-------------------|
+| **Baseline** | `CLAUDE.md` | Every session — automatic | Rules always in context. No extra steps. |
+| **Commands** | `.claude/commands/` | You type `/security-review` | Explicit workflows you control. |
+| **Subagent** | `.claude/agents/aegis.md` | On-demand delegation or `claude --agent aegis` | Isolated security review that doesn't consume main context. Auto-triggers when Claude detects security-relevant tasks. |
+
+**When `CLAUDE.md` + commands are enough:**
+- Small teams or solo projects where you already think security-first
+- You remember to run `/security-review` before PRs
+- Lightweight setups where you want minimum file footprint
+
+**When Aegis as a subagent adds real value:**
+- You want Claude to proactively flag security issues without you asking
+- Security review should not bloat the main conversation context
+- You want a consistent security persona with project-level memory
+- You run sessions with `claude --agent aegis` to make it the primary agent
+
+> **Key difference from OpenCode:** OpenCode's `mode: all` activates Aegis on *every* task automatically. In Claude Code, Aegis is triggered by description-matching delegation or explicitly via `claude --agent aegis`. Use `claude --agent aegis` at the start of a session when you want full-session coverage.
+
+##### Install Aegis for Claude Code
+
+```bash
+# Installs CLAUDE.md + commands + .claude/agents/aegis.md
+npx agent-security-policies --agent claude --skills --aegis
+```
+
+This adds `.claude/agents/aegis.md` — a subagent with isolated context, preloaded security skills, and a description that triggers automatic delegation for security tasks.
+
+See [Aegis Security Agent](#aegis-security-agent) for full details.
+
 #### Via claude.ai Projects
 
 1. Go to **Projects** → **Project Knowledge**
@@ -523,21 +580,54 @@ This creates:
 
 ### Aegis Security Agent
 
-**Aegis** is a specialized security subagent installed to `.opencode/agents/aegis.md` when using OpenCode with oh-my-openagent (`--omo`).
+**Aegis** is a specialized security subagent that enforces OWASP, CWE/SANS, and NIST standards. It can be installed for both Claude Code and OpenCode, but behaves differently in each:
 
-Aegis is activated automatically (`mode: all`) on every task — it shadows the main agent and enforces security constraints proactively, rather than reactively. It operates with:
+| | OpenCode + oh-my-openagent | Claude Code |
+|--|---------------------------|-------------|
+| **Install path** | `.opencode/agents/aegis.md` | `.claude/agents/aegis.md` |
+| **Activation** | `mode: all` — every task, automatically | Description-based delegation or `claude --agent aegis` |
+| **Coverage** | Always active, zero configuration | On-demand by default; session-wide with `--agent` flag |
+| **Install command** | `--agent opencode --omo` | `--agent claude --aegis` |
 
-- Full OWASP ASVS 5.0.0 + Proactive Controls 2024 enforcement
-- CWE/SANS Top 25 2025 prevention
-- Git Safety Protocol (Rule 12)
-- Authority to block insecure patterns before they reach the codebase
+#### What Aegis does (both platforms)
+
+- Reads `AGENT_RULES.md` before every task
+- Enforces OWASP ASVS 5.0.0 + Proactive Controls 2024
+- Prevents all CWE/SANS Top 25 2025 weaknesses
+- Enforces Git Safety Protocol (Rule 12)
+- Suggests `/checkpoint` before high-risk operations — never auto-invokes it
+- Runs security scans using the bundled skills (SAST, secrets, dependency, IaC)
+- Reports findings with CWE/CVE/OWASP mapping and severity triage
+
+#### Install for OpenCode (oh-my-openagent)
 
 ```bash
-# Install Aegis
 npx agent-security-policies --agent opencode --omo
 ```
 
-Aegis is installed once per project. It is non-destructive — if `.opencode/agents/aegis.md` already exists, the installer skips it.
+Installs to `.opencode/agents/aegis.md`. With `mode: all`, Aegis shadows every OpenCode task — no invocation needed.
+
+#### Install for Claude Code
+
+```bash
+npx agent-security-policies --agent claude --skills --aegis
+```
+
+Installs to `.claude/agents/aegis.md`. Claude automatically delegates security-related tasks to Aegis based on the agent description. For full-session coverage, start Claude Code with:
+
+```bash
+claude --agent aegis
+```
+
+This makes Aegis the primary agent for the session — its security-focused system prompt replaces the default Claude Code prompt.
+
+#### Install for both
+
+```bash
+npx agent-security-policies --agent opencode,claude --skills --omo --aegis
+```
+
+Aegis is non-destructive — if the target file already exists, the installer skips it.
 
 ---
 

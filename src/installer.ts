@@ -31,6 +31,7 @@ export interface InstallOptions {
     target: string;
     gitignore: boolean;
     omo: boolean;
+    aegis: boolean;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -397,15 +398,21 @@ function installCommands(targetDir: string, agentIds: string[]): void {
 // ─── Step 3c: Aegis agent ────────────────────────────────────────────
 // OpenCode discovers agents from .opencode/agents/ (per-project)
 // or ~/.config/opencode/agents/ (global). NOT from .claude/agents/.
-function installAegisAgent(targetDir: string): void {
-    const agentsDir = path.join(targetDir, ".opencode", "agents");
+// Claude Code discovers agents from .claude/agents/ (per-project).
+function installAegisAgent(targetDir: string, agentId: "opencode" | "claude" = "opencode"): void {
+    const agentsDir = agentId === "claude"
+        ? path.join(targetDir, ".claude", "agents")
+        : path.join(targetDir, ".opencode", "agents");
+    const relPath = agentId === "claude"
+        ? ".claude/agents/aegis.md"
+        : ".opencode/agents/aegis.md";
     ensureDir(agentsDir);
     const aegisPath = path.join(agentsDir, "aegis.md");
     if (fs.existsSync(aegisPath)) {
-        warn(".opencode/agents/aegis.md already exists — skipping");
+        warn(`${relPath} already exists — skipping`);
     } else {
         fs.writeFileSync(aegisPath, AEGIS_AGENT_CONTENT, "utf-8");
-        ok(".opencode/agents/aegis.md — Aegis security agent installed");
+        ok(`${relPath} — Aegis security agent installed`);
     }
 }
 
@@ -571,6 +578,14 @@ function printSummary(opts: InstallOptions): void {
     if (opts.omo && opts.agents.includes("opencode")) {
         info("Aegis security agent installed (.opencode/agents/aegis.md)");
     }
+    if (opts.aegis) {
+        if (opts.agents.includes("claude")) {
+            info("Aegis security agent installed (.claude/agents/aegis.md)");
+        }
+        if (opts.agents.includes("opencode") && !opts.omo) {
+            info("Aegis security agent installed (.opencode/agents/aegis.md)");
+        }
+    }
     if (opts.gitignore) {
         info("Installed files added to .gitignore");
     }
@@ -590,6 +605,9 @@ function printSummary(opts: InstallOptions): void {
     }
     if (opts.omo && opts.agents.includes("opencode")) {
         console.log("    5. Delegate security tasks to Aegis: ask your agent to invoke Aegis");
+    }
+    if (opts.aegis && opts.agents.includes("claude")) {
+        console.log("    5. Use Aegis: run `claude --agent aegis` for full-session security coverage");
     }
     console.log("");
     console.log("  Docs: github.com/raomaster/agent-security-policies");
@@ -642,9 +660,19 @@ export async function install(opts: InstallOptions): Promise<void> {
         installCommands(targetDir, opts.agents);
     }
 
-    // Step 3c: Aegis agent (OpenCode + --omo)
+    // Step 3c: Aegis agent
+    // --omo = OpenCode + oh-my-openagent (mode: all, per-project)
     if (opts.omo && opts.agents.includes("opencode")) {
-        installAegisAgent(targetDir);
+        installAegisAgent(targetDir, "opencode");
+    }
+    // --aegis = install Aegis for each selected agent that supports it
+    if (opts.aegis) {
+        if (opts.agents.includes("claude")) {
+            installAegisAgent(targetDir, "claude");
+        }
+        if (opts.agents.includes("opencode") && !opts.omo) {
+            installAegisAgent(targetDir, "opencode");
+        }
     }
 
     // Step 4: .gitignore
