@@ -38,7 +38,6 @@ describe("Aegis OmO discipline agent format", () => {
         expect(frontmatter).toContain("description:");
         expect(frontmatter).toContain("model:");
         expect(frontmatter).toContain("mode:");
-        expect(frontmatter).toContain("tools:");
     });
 
     it("mode is 'all' (active on every task)", () => {

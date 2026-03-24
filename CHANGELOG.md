@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.5] — 2026-03-24
+
+### Fixed
+
+- Removed `tools` array from Aegis agent frontmatter — OpenCode rejects YAML array for `tools` field (`expected record, received array`). Both OpenCode and Claude Code inherit all tools by default when the field is omitted.
+
 ## [1.5.4] — 2026-03-24
 
 ### Added

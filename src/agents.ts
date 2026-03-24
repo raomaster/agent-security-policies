@@ -38,15 +38,6 @@ name: Aegis
 description: Security specialist agent. Runs security scans, reviews code for vulnerabilities, applies OWASP/CWE/NIST standards, and fixes findings. Delegate security-related tasks here.
 model: sonnet
 mode: all
-tools:
-  - Bash
-  - Glob
-  - Grep
-  - Read
-  - Edit
-  - Write
-  - WebFetch
-  - TodoWrite
 ---
 
 # Aegis — Security Specialist Agent

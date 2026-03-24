@@ -103,15 +103,9 @@ describe("AEGIS_AGENT_CONTENT", () => {
         expect(AEGIS_AGENT_CONTENT).toContain("description:");
         expect(AEGIS_AGENT_CONTENT).toContain("model: sonnet");
         expect(AEGIS_AGENT_CONTENT).toContain("mode: all");
-        expect(AEGIS_AGENT_CONTENT).toContain("tools:");
-    });
-
-    it("includes required tools for security scanning", () => {
-        expect(AEGIS_AGENT_CONTENT).toContain("- Bash");
-        expect(AEGIS_AGENT_CONTENT).toContain("- Grep");
-        expect(AEGIS_AGENT_CONTENT).toContain("- Read");
-        expect(AEGIS_AGENT_CONTENT).toContain("- Edit");
-        expect(AEGIS_AGENT_CONTENT).toContain("- Write");
+        // tools field intentionally omitted — OpenCode rejects YAML arrays for tools
+        // both OpenCode and Claude Code inherit all tools by default
+        expect(AEGIS_AGENT_CONTENT).not.toContain("tools:");
     });
 
     it("references all 8 security skills", () => {
