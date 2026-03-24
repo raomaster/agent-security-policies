@@ -8,9 +8,10 @@ import {
     detectOhMyOpenagent,
     detectOhMyOpencode,
     getOmoConfigPaths,
+    getOmoWorkerModel,
     install,
 } from "../installer.js";
-import { AEGIS_AGENT_CONTENT } from "../agents.js";
+import { AEGIS_AGENT_CONTENT, generateAegisContent } from "../agents.js";
 
 // Silence all installer output
 beforeEach(() => {
@@ -353,6 +354,80 @@ describe("detectOhMyOpencode (deprecated alias)", () => {
     });
 });
 
+// ─── getOmoWorkerModel ──────────────────────────────────────────────
+
+describe("getOmoWorkerModel", () => {
+    let tmpDir: string;
+    beforeEach(() => { tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "asp-wm-")); });
+    afterEach(() => { fs.rmSync(tmpDir, { recursive: true, force: true }); });
+
+    it("returns undefined when no config file exists", () => {
+        expect(getOmoWorkerModel(tmpDir)).toBeUndefined();
+    });
+
+    it("returns model from agents.sisyphus.model in oh-my-openagent.jsonc", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(
+            path.join(dir, "oh-my-openagent.jsonc"),
+            `{\n  "plugin": ["oh-my-openagent"],\n  "agents": { "sisyphus": { "model": "anthropic/claude-sonnet-4-6" } }\n}`
+        );
+        expect(getOmoWorkerModel(tmpDir)).toBe("anthropic/claude-sonnet-4-6");
+    });
+
+    it("returns model from opencode.json when oh-my-openagent.jsonc has no agents key", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(
+            path.join(dir, "opencode.json"),
+            '{"plugins": ["oh-my-openagent"], "agents": {"sisyphus": {"model": "github-copilot/claude-opus-4-6"}}}'
+        );
+        expect(getOmoWorkerModel(tmpDir)).toBe("github-copilot/claude-opus-4-6");
+    });
+
+    it("returns undefined when sisyphus has no model key", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(
+            path.join(dir, "oh-my-openagent.jsonc"),
+            '{"plugin": ["oh-my-openagent"], "agents": {"sisyphus": {}}}'
+        );
+        expect(getOmoWorkerModel(tmpDir)).toBeUndefined();
+    });
+
+    it("returns undefined when config is malformed", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, "oh-my-openagent.jsonc"), "NOT_JSON");
+        expect(getOmoWorkerModel(tmpDir)).toBeUndefined();
+    });
+});
+
+// ─── generateAegisContent ───────────────────────────────────────────
+
+describe("generateAegisContent", () => {
+    it("omits model line when no model provided", () => {
+        const content = generateAegisContent();
+        expect(content).not.toContain("model:");
+    });
+
+    it("injects model line when model provided", () => {
+        const content = generateAegisContent("anthropic/claude-sonnet-4-6");
+        expect(content).toContain("model: anthropic/claude-sonnet-4-6");
+    });
+
+    it("model line appears before mode: all in frontmatter", () => {
+        const content = generateAegisContent("sonnet");
+        const modelIdx = content.indexOf("model: sonnet");
+        const modeIdx = content.indexOf("mode: all");
+        expect(modelIdx).toBeLessThan(modeIdx);
+    });
+
+    it("AEGIS_AGENT_CONTENT default has no model", () => {
+        expect(AEGIS_AGENT_CONTENT).not.toContain("model:");
+    });
+});
+
 // ─── install() — end-to-end integration tests ───────────────────────
 
 describe("install() — opencode vanilla (no skills, no omo)", () => {
@@ -560,12 +635,13 @@ describe("install() — claude agent with --aegis (Claude Code subagent)", () =>
         ).toBe(true);
     });
 
-    it("aegis.md content matches AEGIS_AGENT_CONTENT", () => {
+    it("aegis.md content includes model: sonnet for Claude Code", () => {
         const written = fs.readFileSync(
             path.join(tmpDir, ".claude", "agents", "aegis.md"),
             "utf-8"
         );
-        expect(written).toBe(AEGIS_AGENT_CONTENT);
+        expect(written).toBe(generateAegisContent("sonnet"));
+        expect(written).toContain("model: sonnet");
     });
 
     it("does NOT create .opencode/agents/aegis.md for claude agent", () => {

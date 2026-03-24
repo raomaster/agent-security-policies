@@ -33,10 +33,19 @@ export type CommandFormat =
     | { type: "append"; destFile: string }
     | { type: "none" };
 
-export const AEGIS_AGENT_CONTENT = `---
+/**
+ * Generate Aegis agent frontmatter + body.
+ * @param model  Optional model string to embed in frontmatter.
+ *               - OpenCode: full provider/model-id (e.g. "anthropic/claude-sonnet-4-6")
+ *               - Claude Code: shorthand (e.g. "sonnet")
+ *               - Omit to let the platform use its configured default.
+ */
+export function generateAegisContent(model?: string): string {
+    const modelLine = model ? `model: ${model}\n` : "";
+    return `---
 name: Aegis
 description: Security specialist agent. Runs security scans, reviews code for vulnerabilities, applies OWASP/CWE/NIST standards, and fixes findings. Delegate security-related tasks here.
-mode: all
+${modelLine}mode: all
 ---
 
 # Aegis — Security Specialist Agent
@@ -83,6 +92,10 @@ Systematically find and fix security vulnerabilities in code, infrastructure, an
 
 Never force push. Never --no-verify. Never \`git add -A\` blindly. Never modify git config. Never commit .env. Prefer new commits over --amend. See Rule 12 in AGENT_RULES.md.
 `;
+}
+
+/** Default Aegis content with no model — for backwards compatibility and tests */
+export const AEGIS_AGENT_CONTENT = generateAegisContent();
 
 export const SUPPORTED_AGENTS: AgentConfig[] = [
     {

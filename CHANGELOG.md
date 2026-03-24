@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.7] — 2026-03-24
+
+### Added
+
+- **Smart model detection for Aegis** — `getOmoWorkerModel()` reads `agents.sisyphus.model` from oh-my-openagent config at install time and injects it into the OpenCode Aegis frontmatter, so Aegis uses the same model as the OmO Sisyphus worker rather than falling back to a platform default
+- `generateAegisContent(model?: string)` — replaces the static `AEGIS_AGENT_CONTENT` constant with a dynamic generator; Claude Code always gets `model: sonnet`, OpenCode gets the detected Sisyphus model (or no model line if not configured)
+
+### Changed
+
+- `AEGIS_AGENT_CONTENT` kept as `generateAegisContent()` (no model) for backwards compatibility
+
 ## [1.5.6] — 2026-03-24
 
 ### Fixed

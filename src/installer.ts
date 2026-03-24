@@ -12,7 +12,7 @@ import {
     POLICY_FILES,
     PROFILES,
     INSTRUCTIONS_BLOCK,
-    AEGIS_AGENT_CONTENT,
+    generateAegisContent,
     getAgentById,
     type AgentConfig,
 } from "./agents.js";
@@ -171,6 +171,29 @@ export function detectOhMyOpenagent(homeDir?: string): boolean {
 
 /** @deprecated Use detectOhMyOpenagent() instead */
 export const detectOhMyOpencode = detectOhMyOpenagent;
+
+/**
+ * Read the oh-my-openagent config and return the model configured for
+ * the Sisyphus worker agent (the main OmO worker). Returns undefined if
+ * the config cannot be read or no model is set.
+ * @param homeDir — override home directory (for testing)
+ */
+export function getOmoWorkerModel(homeDir?: string): string | undefined {
+    const configPaths = getOmoConfigPaths(homeDir);
+    for (const configPath of configPaths) {
+        if (!fs.existsSync(configPath)) continue;
+        try {
+            const raw = fs.readFileSync(configPath, "utf-8");
+            const cleaned = stripJsonComments(raw).replace(/,(\s*[}\]])/g, "$1");
+            const config = JSON.parse(cleaned);
+            const model = config?.agents?.sisyphus?.model;
+            if (typeof model === "string" && model.trim()) return model.trim();
+        } catch {
+            continue;
+        }
+    }
+    return undefined;
+}
 
 // ─── Step 1: Core files ─────────────────────────────────────────────
 function installCoreFiles(targetDir: string, profile: string): void {
@@ -420,10 +443,25 @@ function installAegisAgent(targetDir: string, agentId: "opencode" | "claude" = "
     const aegisPath = path.join(agentsDir, "aegis.md");
     if (fs.existsSync(aegisPath)) {
         warn(`${relPath} already exists — skipping`);
-    } else {
-        fs.writeFileSync(aegisPath, AEGIS_AGENT_CONTENT, "utf-8");
-        ok(`${relPath} — Aegis security agent installed`);
+        return;
     }
+
+    let model: string | undefined;
+    if (agentId === "claude") {
+        // Claude Code accepts shorthand — use sonnet to avoid burning Opus on security review
+        model = "sonnet";
+    } else {
+        // OpenCode: reuse the model the user already configured for OmO's Sisyphus worker.
+        // This respects whatever provider they have (Anthropic, Copilot, OpenCode Zen, etc.)
+        // and avoids hardcoding a model that may not be available to them.
+        model = getOmoWorkerModel();
+        if (model) {
+            info(`Aegis will use model: ${model} (from oh-my-openagent Sisyphus config)`);
+        }
+    }
+
+    fs.writeFileSync(aegisPath, generateAegisContent(model), "utf-8");
+    ok(`${relPath} — Aegis security agent installed`);
 }
 
 // ─── Step 4: .gitignore ─────────────────────────────────────────────
