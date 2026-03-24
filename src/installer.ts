@@ -124,10 +124,14 @@ export function stripJsonComments(text: string): string {
 export function getOmoConfigPaths(homeDir?: string): string[] {
     const home = homeDir ?? os.homedir();
     return [
-        // oh-my-openagent / oh-my-opencode JSONC configs (new format)
+        // New name after project rename
+        path.join(home, ".config", "opencode", "oh-my-openagent.jsonc"),
+        path.join(home, ".config", "opencode", "oh-my-openagent.json"),
+        // Legacy names (before rename)
         path.join(home, ".config", "opencode", "oh-my-opencode.jsonc"),
         path.join(home, ".config", "opencode", "oh-my-opencode.json"),
-        // Legacy opencode.json
+        // opencode.json / opencode.jsonc — plugin can be declared here too
+        path.join(home, ".config", "opencode", "opencode.jsonc"),
         path.join(home, ".config", "opencode", "opencode.json"),
     ];
 }
@@ -144,14 +148,20 @@ export function detectOhMyOpenagent(homeDir?: string): boolean {
         if (!fs.existsSync(configPath)) continue;
         try {
             const raw = fs.readFileSync(configPath, "utf-8");
-            const cleaned = stripJsonComments(raw);
+            // Strip comments AND trailing commas (valid JSONC, invalid JSON)
+            const cleaned = stripJsonComments(raw).replace(/,(\s*[}\]])/g, "$1");
             const config = JSON.parse(cleaned);
             const plugins: unknown[] = config.plugin ?? config.plugins ?? [];
-            return plugins.some(
+            const found = plugins.some(
                 (p) =>
                     typeof p === "string" &&
                     (p.includes("oh-my-openagent") || p.includes("oh-my-opencode"))
             );
+            // Only return true on a positive match — keep searching other
+            // files if this one exists but has no plugin entry (e.g. an
+            // oh-my-openagent settings file that doesn't list plugins, while
+            // the plugin declaration lives in opencode.json)
+            if (found) return true;
         } catch {
             continue;
         }

@@ -120,8 +120,8 @@ Run semgrep.`;
 // ─── getOmoConfigPaths ──────────────────────────────────────────────
 
 describe("getOmoConfigPaths", () => {
-    it("returns exactly 3 paths", () => {
-        expect(getOmoConfigPaths("/fake/home")).toHaveLength(3);
+    it("returns exactly 6 paths", () => {
+        expect(getOmoConfigPaths("/fake/home")).toHaveLength(6);
     });
 
     it("uses provided homeDir for all paths", () => {
@@ -131,16 +131,32 @@ describe("getOmoConfigPaths", () => {
         }
     });
 
-    it("first path is oh-my-opencode.jsonc", () => {
-        expect(getOmoConfigPaths("/h")[0]).toContain("oh-my-opencode.jsonc");
+    it("first path is oh-my-openagent.jsonc (new name)", () => {
+        expect(getOmoConfigPaths("/h")[0]).toContain("oh-my-openagent.jsonc");
     });
 
-    it("second path is oh-my-opencode.json", () => {
-        expect(getOmoConfigPaths("/h")[1]).toContain("oh-my-opencode.json");
+    it("second path is oh-my-openagent.json (new name)", () => {
+        expect(getOmoConfigPaths("/h")[1]).toContain("oh-my-openagent.json");
     });
 
-    it("third path is legacy opencode.json", () => {
-        expect(getOmoConfigPaths("/h")[2]).toContain("opencode.json");
+    it("includes legacy oh-my-opencode.jsonc", () => {
+        const paths = getOmoConfigPaths("/h");
+        expect(paths.some((p) => p.includes("oh-my-opencode.jsonc"))).toBe(true);
+    });
+
+    it("includes legacy oh-my-opencode.json", () => {
+        const paths = getOmoConfigPaths("/h");
+        expect(paths.some((p) => p.includes("oh-my-opencode.json"))).toBe(true);
+    });
+
+    it("includes opencode.jsonc", () => {
+        const paths = getOmoConfigPaths("/h");
+        expect(paths.some((p) => p.includes("opencode.jsonc"))).toBe(true);
+    });
+
+    it("includes opencode.json", () => {
+        const paths = getOmoConfigPaths("/h");
+        expect(paths.some((p) => p.includes("opencode.json"))).toBe(true);
     });
 
     it("uses os.homedir() when no homeDir provided", () => {
@@ -267,6 +283,65 @@ describe("detectOhMyOpenagent", () => {
         fs.writeFileSync(
             path.join(dir, "oh-my-opencode.jsonc"),
             `{\n  /* Plugin config */\n  "plugin": ["oh-my-openagent" /* main plugin */]\n}`
+        );
+        expect(detectOhMyOpenagent(tmpDir)).toBe(true);
+    });
+
+    // Bug fix: new filename oh-my-openagent.jsonc (after project rename)
+    it("returns true: oh-my-openagent in oh-my-openagent.jsonc (new filename)", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(
+            path.join(dir, "oh-my-openagent.jsonc"),
+            `{\n  // new config name\n  "plugin": ["oh-my-openagent"]\n}`
+        );
+        expect(detectOhMyOpenagent(tmpDir)).toBe(true);
+    });
+
+    it("returns true: oh-my-openagent in oh-my-openagent.json (new filename)", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(
+            path.join(dir, "oh-my-openagent.json"),
+            '{"plugin": ["oh-my-openagent"]}'
+        );
+        expect(detectOhMyOpenagent(tmpDir)).toBe(true);
+    });
+
+    // Bug fix: trailing commas in JSONC (valid JSONC, invalid JSON)
+    it("returns true: JSONC with trailing commas", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(
+            path.join(dir, "oh-my-openagent.jsonc"),
+            `{\n  "plugin": ["oh-my-openagent",],\n}`
+        );
+        expect(detectOhMyOpenagent(tmpDir)).toBe(true);
+    });
+
+    it("returns true: opencode.jsonc with trailing commas and plugin", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(
+            path.join(dir, "opencode.jsonc"),
+            `{\n  "plugins": ["oh-my-openagent",],\n}`
+        );
+        expect(detectOhMyOpenagent(tmpDir)).toBe(true);
+    });
+
+    // Bug fix: fall-through when file exists but has no plugin entry
+    it("falls through to opencode.json when oh-my-openagent.jsonc has no plugin key", () => {
+        const dir = path.join(tmpDir, ".config", "opencode");
+        fs.mkdirSync(dir, { recursive: true });
+        // oh-my-openagent.jsonc exists but has agent settings, not plugin declaration
+        fs.writeFileSync(
+            path.join(dir, "oh-my-openagent.jsonc"),
+            '{"agents": {"security": true}}'
+        );
+        // plugin is declared in opencode.json
+        fs.writeFileSync(
+            path.join(dir, "opencode.json"),
+            '{"plugins": ["oh-my-openagent"]}'
         );
         expect(detectOhMyOpenagent(tmpDir)).toBe(true);
     });
