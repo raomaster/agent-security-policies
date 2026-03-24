@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.4] — 2026-03-24
+
+### Added
+
+- **Agent-driven installation** (`docs/installation.md`) — LLM-readable guide that any agent (Claude Code, Cursor, Windsurf, etc.) can fetch via `curl` and follow to install the correct configuration automatically
+- README now shows the "For Humans / For LLM Agents" install pattern at the top — paste one prompt to your agent and it handles everything
+- `docs/` directory included in npm package `files`
+
 ## [1.5.3] — 2026-03-24
 
 ### Fixed

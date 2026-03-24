@@ -1,7 +1,7 @@
 # agent-security-policies
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.5.3-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.5.4-green.svg)](CHANGELOG.md)
 [![OWASP ASVS](https://img.shields.io/badge/OWASP_ASVS-5.0.0-orange.svg)](policies/owasp_asvs.yaml)
 [![CWE Top 25](https://img.shields.io/badge/CWE_Top_25-2025-red.svg)](policies/cwe_top25.yaml)
 
@@ -10,6 +10,38 @@
 > AI coding agents generate code fast — but without guardrails, they also generate vulnerabilities fast. This project provides a drop-in security policy layer that works with **10+ agents and IDEs**, backed by OWASP, NIST, CWE, and SLSA standards.
 >
 > One install command. Zero dependencies. Every agent speaks security.
+
+---
+
+## Installation
+
+### For Humans
+
+Copy and paste this prompt into your LLM agent (Claude Code, Cursor, Windsurf, etc.):
+
+```
+Install agent-security-policies by following the instructions at:
+https://raw.githubusercontent.com/raomaster/agent-security-policies/main/docs/installation.md
+```
+
+The agent will ask a few questions about your setup and install the right configuration automatically.
+
+### For LLM Agents
+
+Fetch the installation guide and follow it:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/raomaster/agent-security-policies/main/docs/installation.md
+```
+
+### Skip This README
+
+We're past the era of reading docs. Just paste this into your agent:
+
+```
+Read this and configure my project with agent-security-policies:
+https://raw.githubusercontent.com/raomaster/agent-security-policies/main/docs/installation.md
+```
 
 ---
 
