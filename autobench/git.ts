@@ -63,8 +63,10 @@ export function commitChange(
 
 export function isClean(): boolean {
   try {
-    const status = getStatus();
-    return status.length === 0;
+    // Check for staged and unstaged changes only (not untracked files)
+    const staged = git(['diff', '--cached', '--name-only']);
+    const unstaged = git(['diff', '--name-only']);
+    return staged.length === 0 && unstaged.length === 0;
   } catch {
     return true;
   }
