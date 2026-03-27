@@ -23,6 +23,7 @@ export function proposeImprovements(metrics: Metrics[]): Improvement[] {
 
   // 1. False Negatives → add mapping or rule to sast-scan
   for (const m of fns) {
+    if (!m.cwe) continue;
     const cwe = m.cwe.padStart(7, '0');
     const pattern = suggestSemgrepPattern(cwe);
     if (pattern) {
@@ -52,6 +53,7 @@ export function proposeImprovements(metrics: Metrics[]): Improvement[] {
   // 3. Unmapped CWEs in fix-findings
   const unmappedCwes = new Set<string>();
   for (const m of metrics) {
+    if (!m.cwe) continue;
     if (m.fn > 0 && !hasFixFindingsMapping(m.cwe)) {
       unmappedCwes.add(m.cwe.padStart(7, '0'));
     }
