@@ -1,0 +1,34 @@
+{
+  "cwe": "CWE-078",
+  "name": "OS Command Injection",
+  "category": "Injection",
+  "cases": [
+    {
+      "id": "cmd-001",
+      "file": "cmd-injection.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 7, "cwe": "CWE-078", "severity": "CRITICAL", "description": "User input passed to exec without sanitization" }
+      ]
+    },
+    {
+      "id": "cmd-002",
+      "file": "cmd-injection.py",
+      "language": "python",
+      "vulnerable": true,
+      "findings": [
+        { "line": 6, "cwe": "CWE-078", "severity": "CRITICAL", "description": "User input passed to os.system" },
+        { "line": 12, "cwe": "CWE-078", "severity": "CRITICAL", "description": "User input passed to subprocess with shell=True" }
+      ]
+    },
+    {
+      "id": "cmd-003",
+      "file": "safe-subprocess.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Uses execFile with args array - must NOT trigger"
+    }
+  ]
+}

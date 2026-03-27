@@ -1,0 +1,35 @@
+{
+  "cwe": "CWE-327",
+  "name": "Use of Broken or Risky Cryptographic Algorithm",
+  "category": "Cryptography",
+  "cases": [
+    {
+      "id": "crypto-001",
+      "file": "weak-crypto.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 5, "cwe": "CWE-327", "severity": "HIGH", "description": "MD5 used for password hashing" },
+        { "line": 10, "cwe": "CWE-327", "severity": "MEDIUM", "description": "SHA1 used for integrity check" }
+      ]
+    },
+    {
+      "id": "crypto-002",
+      "file": "weak-crypto.py",
+      "language": "python",
+      "vulnerable": true,
+      "findings": [
+        { "line": 4, "cwe": "CWE-327", "severity": "HIGH", "description": "MD5 used for password hashing" },
+        { "line": 9, "cwe": "CWE-327", "severity": "MEDIUM", "description": "DES encryption used" }
+      ]
+    },
+    {
+      "id": "crypto-003",
+      "file": "safe-crypto.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Uses bcrypt and SHA-256 - must NOT trigger"
+    }
+  ]
+}

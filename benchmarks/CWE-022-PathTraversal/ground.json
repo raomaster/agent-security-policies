@@ -1,0 +1,33 @@
+{
+  "cwe": "CWE-022",
+  "name": "Path Traversal",
+  "category": "Input Validation",
+  "cases": [
+    {
+      "id": "path-001",
+      "file": "path-traversal.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 8, "cwe": "CWE-022", "severity": "HIGH", "description": "User input used in file path without validation" }
+      ]
+    },
+    {
+      "id": "path-002",
+      "file": "path-traversal.py",
+      "language": "python",
+      "vulnerable": true,
+      "findings": [
+        { "line": 7, "cwe": "CWE-022", "severity": "HIGH", "description": "User input used in open() without path validation" }
+      ]
+    },
+    {
+      "id": "path-003",
+      "file": "safe-path.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Validates path with allowlist - must NOT trigger"
+    }
+  ]
+}

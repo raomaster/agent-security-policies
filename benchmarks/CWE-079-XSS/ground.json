@@ -1,0 +1,50 @@
+{
+  "cwe": "CWE-079",
+  "name": "Cross-Site Scripting (XSS)",
+  "category": "Injection",
+  "cases": [
+    {
+      "id": "xss-001",
+      "file": "reflected-xss.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 8, "cwe": "CWE-079", "severity": "HIGH", "description": "User input rendered via innerHTML without sanitization" }
+      ]
+    },
+    {
+      "id": "xss-002",
+      "file": "stored-xss.ts",
+      "language": "typescript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 14, "cwe": "CWE-079", "severity": "HIGH", "description": "User-controlled data rendered in template without escaping" }
+      ]
+    },
+    {
+      "id": "xss-003",
+      "file": "xss-django.py",
+      "language": "python",
+      "vulnerable": true,
+      "findings": [
+        { "line": 11, "cwe": "CWE-079", "severity": "HIGH", "description": "mark_safe used on user input without escaping" }
+      ]
+    },
+    {
+      "id": "xss-004",
+      "file": "safe-render.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Uses DOMPurify.sanitize() - must NOT trigger"
+    },
+    {
+      "id": "xss-005",
+      "file": "safe-render.py",
+      "language": "python",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Uses django.utils.html.escape - must NOT trigger"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "cwe": "CWE-502",
+  "name": "Deserialization of Untrusted Data",
+  "category": "Injection",
+  "cases": [
+    {
+      "id": "deser-001",
+      "file": "unsafe-deser.py",
+      "language": "python",
+      "vulnerable": true,
+      "findings": [
+        { "line": 6, "cwe": "CWE-502", "severity": "CRITICAL", "description": "pickle.loads on untrusted data" },
+        { "line": 12, "cwe": "CWE-502", "severity": "CRITICAL", "description": "yaml.load without SafeLoader" }
+      ]
+    },
+    {
+      "id": "deser-002",
+      "file": "safe-deser.py",
+      "language": "python",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Uses json.loads and yaml.safe_load - must NOT trigger"
+    }
+  ]
+}

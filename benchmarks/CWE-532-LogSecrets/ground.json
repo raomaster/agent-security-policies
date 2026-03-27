@@ -1,0 +1,34 @@
+{
+  "cwe": "CWE-532",
+  "name": "Insertion of Sensitive Information into Log File",
+  "category": "Information Disclosure",
+  "cases": [
+    {
+      "id": "log-001",
+      "file": "log-secrets.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 5, "cwe": "CWE-532", "severity": "HIGH", "description": "Password logged in plaintext" },
+        { "line": 10, "cwe": "CWE-532", "severity": "HIGH", "description": "API key logged in request handler" }
+      ]
+    },
+    {
+      "id": "log-002",
+      "file": "log-secrets.py",
+      "language": "python",
+      "vulnerable": true,
+      "findings": [
+        { "line": 7, "cwe": "CWE-532", "severity": "HIGH", "description": "Credit card number logged" }
+      ]
+    },
+    {
+      "id": "log-003",
+      "file": "safe-logging.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Redacts sensitive fields before logging - must NOT trigger"
+    }
+  ]
+}

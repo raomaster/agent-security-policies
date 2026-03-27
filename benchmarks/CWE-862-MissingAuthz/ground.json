@@ -1,0 +1,24 @@
+{
+  "cwe": "CWE-862",
+  "name": "Missing Authorization",
+  "category": "Authorization",
+  "cases": [
+    {
+      "id": "authz-001",
+      "file": "missing-authz.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 8, "cwe": "CWE-862", "severity": "HIGH", "description": "Admin endpoint without authorization check" }
+      ]
+    },
+    {
+      "id": "authz-002",
+      "file": "safe-authz.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Has role-based authorization middleware - must NOT trigger"
+    }
+  ]
+}

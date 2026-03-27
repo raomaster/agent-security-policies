@@ -1,0 +1,44 @@
+{
+  "cwe": "CWE-798",
+  "name": "Hardcoded Secrets",
+  "category": "Secrets Management",
+  "cases": [
+    {
+      "id": "secret-001",
+      "file": "hardcoded-api-key.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 3, "cwe": "CWE-798", "severity": "CRITICAL", "description": "Hardcoded API key in source code" },
+        { "line": 8, "cwe": "CWE-798", "severity": "CRITICAL", "description": "Hardcoded database password in connection string" }
+      ]
+    },
+    {
+      "id": "secret-002",
+      "file": "hardcoded-secrets.py",
+      "language": "python",
+      "vulnerable": true,
+      "findings": [
+        { "line": 4, "cwe": "CWE-798", "severity": "CRITICAL", "description": "Hardcoded AWS secret key" },
+        { "line": 9, "cwe": "CWE-798", "severity": "HIGH", "description": "Hardcoded JWT secret" }
+      ]
+    },
+    {
+      "id": "secret-003",
+      "file": "hardcoded-creds.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 4, "cwe": "CWE-798", "severity": "CRITICAL", "description": "Hardcoded private key in source" }
+      ]
+    },
+    {
+      "id": "secret-004",
+      "file": "safe-env-vars.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Uses environment variables - must NOT trigger"
+    }
+  ]
+}

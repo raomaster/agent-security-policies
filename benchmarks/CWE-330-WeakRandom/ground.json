@@ -1,0 +1,33 @@
+{
+  "cwe": "CWE-330",
+  "name": "Insufficiently Random Values",
+  "category": "Cryptography",
+  "cases": [
+    {
+      "id": "random-001",
+      "file": "weak-random.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 4, "cwe": "CWE-330", "severity": "HIGH", "description": "Math.random() used for security-sensitive token generation" }
+      ]
+    },
+    {
+      "id": "random-002",
+      "file": "weak-random.py",
+      "language": "python",
+      "vulnerable": true,
+      "findings": [
+        { "line": 4, "cwe": "CWE-330", "severity": "HIGH", "description": "random.random() used for security token" }
+      ]
+    },
+    {
+      "id": "random-003",
+      "file": "safe-random.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "Uses crypto.randomBytes - must NOT trigger"
+    }
+  ]
+}

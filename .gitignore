@@ -27,3 +27,8 @@ __pycache__/
 *.bak
 *.log
 .env
+
+# AutoBench
+autobench/node_modules/
+results/results.tsv
+results/dashboard/index.html

@@ -1,0 +1,24 @@
+{
+  "cwe": "CWE-287",
+  "name": "Improper Authentication",
+  "category": "Authentication",
+  "cases": [
+    {
+      "id": "auth-001",
+      "file": "auth-bypass.js",
+      "language": "javascript",
+      "vulnerable": true,
+      "findings": [
+        { "line": 10, "cwe": "CWE-287", "severity": "CRITICAL", "description": "JWT verified with 'none' algorithm" }
+      ]
+    },
+    {
+      "id": "auth-002",
+      "file": "safe-auth.js",
+      "language": "javascript",
+      "vulnerable": false,
+      "findings": [],
+      "note": "JWT verified with explicit HS256 - must NOT trigger"
+    }
+  ]
+}
